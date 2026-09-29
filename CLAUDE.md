@@ -142,6 +142,16 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
 - APK : signé avec la clé de debug du modèle Expo (identique d'un build à l'autre) → la v2 s'installe par-dessus la v1
   sans perdre les données. Bonne pratique quand même : exporter une sauvegarde avant de mettre à jour.
 
+## Sécurité (audit du 2026-09-29)
+- Vérifié : aucun secret ni clé dans le dépôt ; SQL 100 % paramétré ; pas d'`eval`/`innerHTML`/WebView/lien externe ;
+  seule permission Android = notifications ; le service worker ne touche que les GET de même origine ;
+  l'import JSON est validé strictement (structure, profondeur, doublons, couleur `#RRGGBB`, ≤ 20 000 éléments).
+- `npm audit --omit=dev` : 0 haute/critique, 14 modérées, toutes dans l'outillage de build Expo (`uuid`,
+  `decode-uri-component`) — non livrées dans l'app ; ne pas faire `audit fix --force` (casse Expo).
+- Limite connue : l'APK est signé avec la clé de debug **publique** du modèle Expo (pratique pour s'auto-installer, mais
+  n'importe qui peut produire un APK qui remplace le vôtre). Si l'app est un jour diffusée : clé perso dans les secrets GitHub.
+- Données non chiffrées sur l'appareil (localStorage / SQLite) ; sauvegarde Android autorisée par défaut.
+
 ## Conventions
 - Développement sur la branche désignée par la session (v1 : `claude/create-application-dodfio`, mergée dans `main` ;
   v2 : `claude/serene-mendel-6n23bn`). Pas de PR sans demande explicite de l'utilisateur.

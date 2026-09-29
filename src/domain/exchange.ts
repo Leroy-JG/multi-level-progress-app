@@ -1,4 +1,7 @@
-import { MAX_DEPTH, createNode, type ProgressNode } from './types';
+import { MAX_DEPTH, createNode, validColor, type ProgressNode } from './types';
+
+/** Garde-fou : une sauvegarde plus grosse que ça n'est pas une sauvegarde de cette application. */
+const MAX_NODES = 20000;
 
 export const EXPORT_APP = 'w-progress';
 export const EXPORT_VERSION = 2;
@@ -30,7 +33,7 @@ export function parseImport(text: string): ProgressNode[] {
   }
   if (!raw || typeof raw !== 'object') throw new ImportError('invalid_format');
   const file = raw as Partial<ExportFile>;
-  if (file.app !== EXPORT_APP || !Array.isArray(file.nodes)) throw new ImportError('invalid_format');
+  if (file.app !== EXPORT_APP || !Array.isArray(file.nodes) || file.nodes.length > MAX_NODES) throw new ImportError('invalid_format');
 
   const nodes: ProgressNode[] = [];
   const ids = new Set<string>();
@@ -50,7 +53,7 @@ export function parseImport(text: string): ProgressNode[] {
         progress: Math.min(100, Math.max(0, progress)),
         weight: weight === null ? null : Math.min(100, Math.max(0, weight)),
         position: num(item.position) ?? 0,
-        color: typeof item.color === 'string' ? item.color : null,
+        color: validColor(item.color),
         note: str(item.note).slice(0, 10000),
         dueDate: /^\d{4}-\d{2}-\d{2}$/.test(due) ? due : null,
         reminderAt: num(item.reminderAt),

@@ -138,3 +138,23 @@ describe('export / import', () => {
     expect(parseImport(v1)[0]?.progress).toBe(100);
   });
 });
+
+describe('import : durcissement', () => {
+  const file = (nodes: unknown[]) => JSON.stringify({ app: 'w-progress', version: 2, nodes });
+
+  it('ne garde que les couleurs #RRGGBB', () => {
+    const [ok, bad] = parseImport(
+      file([
+        { id: 'a', parentId: null, title: 'a', color: '#A3303F' },
+        { id: 'b', parentId: null, title: 'b', color: 'url(javascript:alert(1))' },
+      ]),
+    );
+    expect(ok?.color).toBe('#A3303F');
+    expect(bad?.color).toBeNull();
+  });
+
+  it('rejette une entrée nulle ou un fichier démesuré sans planter autrement', () => {
+    expect(() => parseImport(file([null]))).toThrow();
+    expect(() => parseImport(file(Array.from({ length: 20001 }, (_, i) => ({ id: `n${i}`, parentId: null, title: 'x' }))))).toThrow(ImportError);
+  });
+});

@@ -27,6 +27,11 @@ export interface ProgressNode {
   completedAt: number | null;
 }
 
+/** Couleur de projet valide (#RRGGBB) ; tout le reste (import, base corrompue) devient null. */
+export function validColor(value: unknown): string | null {
+  return typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value) ? value : null;
+}
+
 export function createNode(partial: Pick<ProgressNode, 'id' | 'parentId' | 'title'> & Partial<ProgressNode>): ProgressNode {
   return {
     progress: 0,
@@ -52,7 +57,7 @@ export function normalizeStoredNode(raw: Record<string, unknown>): ProgressNode 
     progress: Math.min(100, Math.max(0, progress)),
     weight: num(raw.weight),
     position: num(raw.position) ?? 0,
-    color: typeof raw.color === 'string' ? raw.color : null,
+    color: validColor(raw.color),
     note: typeof raw.note === 'string' ? raw.note : '',
     dueDate: typeof raw.dueDate === 'string' ? raw.dueDate : null,
     reminderAt: num(raw.reminderAt),
