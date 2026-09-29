@@ -1,4 +1,4 @@
-import { childrenOf } from './tree';
+import { childrenOf, groupByParent } from './tree';
 import type { NodeId, ProgressNode } from './types';
 
 /**
@@ -55,6 +55,30 @@ function computeProgress(nodes: readonly ProgressNode[], node: ProgressNode): nu
   return Math.min(1, Math.max(0, total));
 }
 
+/** Progression (0–1) de tous les nœuds, calculée en une seule passe. Même résultat que `progressOf`. */
+export function progressMap(nodes: readonly ProgressNode[]): Map<NodeId, number> {
+  const groups = groupByParent(nodes);
+  const result = new Map<NodeId, number>();
+  const visit = (node: ProgressNode): number => {
+    const known = result.get(node.id);
+    if (known !== undefined) return known;
+    const kids = groups.get(node.id) ?? [];
+    let value: number;
+    if (kids.length === 0) {
+      value = node.progress / 100;
+    } else {
+      const weights = resolveWeights(kids);
+      value = 0;
+      for (const kid of kids) value += (weights.get(kid.id) ?? 0) * visit(kid);
+    }
+    value = Math.min(1, Math.max(0, value));
+    result.set(node.id, value);
+    return value;
+  };
+  for (const node of nodes) visit(node);
+  return result;
+}
+
 export interface WeightSummary {
   /** Somme des pourcentages effectifs (toujours 100 si le groupe n'est pas vide). */
   fixedTotal: number;
@@ -81,7 +105,12 @@ export function effectivePercent(siblings: readonly ProgressNode[], id: NodeId):
 
 const EPSILON = 1e-9;
 
+/** Une progression (0–1) vaut « terminé » à 100 %. */
+export function isDone(progress: number): boolean {
+  return progress >= 1 - EPSILON;
+}
+
 /** Un nœud est terminé quand sa progression atteint 100 %. */
 export function isComplete(nodes: readonly ProgressNode[], id: NodeId): boolean {
-  return progressOf(nodes, id) >= 1 - EPSILON;
+  return isDone(progressOf(nodes, id));
 }

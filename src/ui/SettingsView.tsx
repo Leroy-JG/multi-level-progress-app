@@ -6,6 +6,7 @@ import { LANGUAGES, t } from '../i18n';
 import { useStore } from '../store/store';
 import { Button, Card, ConfirmSheet, Field, Segmented, Sheet, Text } from './components';
 import { canPickFile, pickTextFile, shareText } from './files';
+import { KeyboardScrollView } from './keyboard';
 import { useTheme } from './theme';
 
 
@@ -86,26 +87,28 @@ export function SettingsView() {
       <Text style={{ color: theme.muted, fontSize: 12, textAlign: 'center', marginTop: 28 }}>{t('settings.about')}</Text>
 
       <Sheet visible={importOpen && !pending} title={t('settings.import')} onClose={() => setImportOpen(false)}>
-        {canPickFile ? <Button title={t('settings.pickFile')} variant="ghost" onPress={pickFile} style={{ marginBottom: 14 }} /> : null}
-        <Field
-          label={t('settings.pasteLabel')}
-          value={text}
-          onChangeText={(v) => {
-            setText(v);
-            setError(null);
-          }}
-          multiline
-          style={{ minHeight: 120, textAlignVertical: 'top' }}
-          placeholder="{ ... }"
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        {error ? (
-          <Text style={{ color: theme.error, marginBottom: 10 }} accessibilityLiveRegion="polite">
-            {error}
-          </Text>
-        ) : null}
-        <Button title={t('settings.importCheck')} disabled={text.trim() === ''} onPress={() => tryParse(text)} />
+        <KeyboardScrollView style={{ flexGrow: 0 }}>
+          {canPickFile ? <Button title={t('settings.pickFile')} variant="ghost" onPress={pickFile} style={{ marginBottom: 14 }} /> : null}
+          <Field
+            label={t('settings.pasteLabel')}
+            value={text}
+            onChangeText={(v) => {
+              setText(v);
+              setError(null);
+            }}
+            multiline
+            style={{ minHeight: 120, textAlignVertical: 'top' }}
+            placeholder="{ ... }"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {error ? (
+            <Text style={{ color: theme.error, marginBottom: 10 }} accessibilityLiveRegion="polite">
+              {error}
+            </Text>
+          ) : null}
+          <Button title={t('settings.importCheck')} disabled={text.trim() === ''} onPress={() => tryParse(text)} />
+        </KeyboardScrollView>
       </Sheet>
 
       <ConfirmSheet

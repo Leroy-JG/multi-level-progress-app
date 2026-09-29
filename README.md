@@ -3,6 +3,7 @@ App mobile de suivi de progression de projets multi-niveaux (projets, sous-proje
 
 - 4 niveaux : projet → sous-projet → tâche → sous-tâche, avec une barre de progression à chaque niveau.
 - Poids de chaque élément dans son parent : 1/N par défaut ou pourcentage choisi (ex. 70 / 30). Le total fait toujours 100 %.
+- Accordéons : dans la liste de chaque écran, on déploie un sous-projet (ou une tâche) pour voir et cocher son contenu sur place, avec nom et progression à chaque niveau.
 - Projets distincts, avec sélecteur et couleur. Données stockées localement (SQLite).
 
 ## Lancer

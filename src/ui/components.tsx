@@ -1,13 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState, type ReactNode } from 'react';
+import { useContext, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import {
-  Modal,
+  Animated,
+  BackHandler,
+  Easing,
+  Platform,
   Pressable,
   StyleSheet,
   Text as RNText,
   TextInput as RNTextInput,
   View,
+  useWindowDimensions,
   type StyleProp,
   type TextInputProps,
   type TextProps,
@@ -16,6 +20,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t, type TKey } from '../i18n';
+import { useKeyboardInset, useReveal } from './keyboard';
+import { SheetHostContext } from './SheetHost';
 import { onColor, useTheme } from './theme';
 
 /* ---------- Typographie : Raleway, une police par graisse ---------- */
@@ -40,9 +46,26 @@ export function Text({ style, ...rest }: TextProps) {
   return <RNText {...rest} style={withFont([{ color: theme.text }, style])} />;
 }
 
-export function TextInput({ style, ...rest }: TextInputProps) {
+export function TextInput({ style, onFocus, onBlur, ...rest }: TextInputProps) {
   const theme = useTheme();
-  return <RNTextInput placeholderTextColor={theme.muted} {...rest} style={withFont([{ color: theme.text }, style])} />;
+  const reveal = useReveal();
+  const ref = useRef<RNTextInput>(null);
+  return (
+    <RNTextInput
+      placeholderTextColor={theme.muted}
+      {...rest}
+      ref={ref}
+      onFocus={(e) => {
+        reveal?.focus(ref.current);
+        onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        reveal?.blur(ref.current);
+        onBlur?.(e);
+      }}
+      style={withFont([{ color: theme.text }, style])}
+    />
+  );
 }
 
 /* ---------- Éléments de base ---------- */
@@ -235,20 +258,81 @@ export function Card({ children, style, accent }: { children: ReactNode; style?:
   );
 }
 
+const NATIVE_DRIVER = Platform.OS !== 'web';
+
+/**
+ * Feuille du bas. Son contenu est affiché par <SheetProvider> (voir SheetHost) ; ce composant ne rend rien
+ * lui-même, il gère l'animation d'entrée / sortie et la touche « retour » d'Android.
+ */
 export function Sheet({ visible, title, onClose, children }: { visible: boolean; title: string; onClose: () => void; children: ReactNode }) {
+  const host = useContext(SheetHostContext);
+  const id = useId();
+  const [mounted, setMounted] = useState(visible);
+  const anim = useRef(new Animated.Value(visible ? 1 : 0)).current;
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+
+  useEffect(() => {
+    if (visible) {
+      setMounted(true);
+      Animated.timing(anim, { toValue: 1, duration: 220, easing: Easing.out(Easing.cubic), useNativeDriver: NATIVE_DRIVER }).start();
+    } else {
+      Animated.timing(anim, { toValue: 0, duration: 180, easing: Easing.in(Easing.cubic), useNativeDriver: NATIVE_DRIVER }).start(({ finished }) => {
+        if (finished) setMounted(false);
+      });
+    }
+  }, [visible, anim]);
+
+  useEffect(() => {
+    if (!visible) return;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      closeRef.current();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [visible]);
+
+  // Publie le contenu à chaque rendu : le contenu suit ainsi les changements d'état du propriétaire.
+  useEffect(() => {
+    host?.set(
+      id,
+      mounted ? (
+        <SheetLayer title={title} onClose={onClose} anim={anim}>
+          {children}
+        </SheetLayer>
+      ) : null,
+    );
+  });
+  useEffect(() => () => host?.set(id, null), [host, id]);
+
+  return null;
+}
+
+function SheetLayer({ title, onClose, anim, children }: { title: string; onClose: () => void; anim: Animated.Value; children: ReactNode }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const keyboard = useKeyboardInset();
+  const { height } = useWindowDimensions();
+  const translateY = anim.interpolate({ inputRange: [0, 1], outputRange: [height, 0] });
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel={t('common.close')} />
-      <View style={[styles.sheet, { backgroundColor: theme.card, paddingBottom: 24 + insets.bottom }]}>
+    // Le clavier occupe le bas de l'écran : la feuille se pose juste au-dessus.
+    <View role="dialog" aria-modal style={[styles.layer, { paddingBottom: keyboard }]}>
+      <Animated.View style={[StyleSheet.absoluteFill, styles.backdrop, { opacity: anim }]}>
+        <Pressable style={{ flex: 1 }} onPress={onClose} accessibilityLabel={t('common.close')} />
+      </Animated.View>
+      <Animated.View
+        style={[
+          styles.sheet,
+          { backgroundColor: theme.card, paddingBottom: keyboard > 0 ? 16 : 24 + insets.bottom, transform: [{ translateY }] },
+        ]}
+      >
         <View style={styles.sheetHeader}>
           <Text style={{ fontSize: 19, fontWeight: '800', flex: 1 }}>{title}</Text>
           <IconButton name="close" onPress={onClose} label={t('common.close')} />
         </View>
         {children}
-      </View>
-    </Modal>
+      </Animated.View>
+    </View>
   );
 }
 
@@ -336,7 +420,8 @@ const styles = StyleSheet.create({
   segment: { flex: 1, paddingVertical: 9, borderRadius: 9, alignItems: 'center' },
   input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, fontSize: 16 },
   card: { borderRadius: 18, borderWidth: 1, padding: 18 },
-  backdrop: { flex: 1, backgroundColor: 'rgba(20,33,61,0.55)' },
+  layer: { flex: 1, justifyContent: 'flex-end' },
+  backdrop: { backgroundColor: 'rgba(20,33,61,0.55)' },
   sheet: {
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,

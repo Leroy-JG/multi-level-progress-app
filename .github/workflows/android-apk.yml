@@ -1,5 +1,5 @@
 # Construit un APK Android installable directement (sans Google Play, sans compte Expo).
-# Lancer à la main (Actions → « APK Android » → Run workflow) ou en poussant un tag « v* » (ex. v0.2.0) :
+# Lancer à la main (Actions → « APK Android » → Run workflow) ou en poussant un tag « v* » (ex. v2.0.0) :
 # l'APK est alors joint à la release GitHub correspondante.
 # L'APK est signé avec la clé de debug du modèle Expo : suffisant pour l'installer soi-même.
 name: APK Android

@@ -1,18 +1,23 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { dayKey } from '../domain/insights';
-import { effectivePercent, isComplete, progressOf } from '../domain/progress';
-import { canAddChild, childrenOf, depthOf, indexNodes, pathTo } from '../domain/tree';
+import { isDone, progressMap } from '../domain/progress';
+import { canAddChild, depthOf, groupByParent, indexNodes, pathTo } from '../domain/tree';
 import { LEVEL_KEYS, type NodeId, type ProgressNode } from '../domain/types';
 import { formatDate, formatDateTime, t } from '../i18n';
 import { useStore } from '../store/store';
 import { BottomBar, Button, Card, Checkbox, Chip, ConfirmSheet, IconButton, ProgressBar, Text, TextInput } from './components';
+import { toggleExpanded, useExpanded } from './expansion';
+import { KeyboardScrollView, useKeyboardInset } from './keyboard';
+import { TreeBranch, type TreeContext } from './NodeTree';
 import { NoProjectView, ProjectSwitcher } from './ProjectSwitcher';
 import { DateSheet, EditSheet, ReminderSheet, WeightsSheet } from './sheets';
 import { DEFAULT_PROJECT_COLOR, formatPercent, useTheme } from './theme';
+
+const NO_KIDS: ProgressNode[] = [];
 
 type Dialog = 'none' | 'weights' | 'addChild' | 'editSelf' | 'due' | 'reminder' | { confirmToggle: NodeId };
 
@@ -23,6 +28,8 @@ export function NodeScreen({ nodeId }: { nodeId: NodeId | null }) {
   const theme = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const keyboard = useKeyboardInset();
+  const expanded = useExpanded();
   const store = useStore();
   const [dialog, setDialog] = useState<Dialog>('none');
   const [reorder, setReorder] = useState(false);
@@ -30,6 +37,8 @@ export function NodeScreen({ nodeId }: { nodeId: NodeId | null }) {
 
   const { nodes } = store;
   const index = useMemo(() => indexNodes(nodes), [nodes]);
+  const kidsByParent = useMemo(() => groupByParent(nodes), [nodes]);
+  const progressById = useMemo(() => progressMap(nodes), [nodes]);
   const node = nodeId ? index.get(nodeId) : undefined;
   const hasProjects = nodes.some((n) => n.parentId === null);
 
@@ -47,10 +56,12 @@ export function NodeScreen({ nodeId }: { nodeId: NodeId | null }) {
   const isProject = depth === 1;
   const project = pathTo(index, node.id)[0];
   const projectColor = project?.color ?? DEFAULT_PROJECT_COLOR;
-  const children = childrenOf(nodes, node.id);
+  const kids = (id: NodeId) => kidsByParent.get(id) ?? NO_KIDS;
+  const progressFor = (id: NodeId) => progressById.get(id) ?? 0;
+  const children = kids(node.id);
   const isLeaf = children.length === 0;
-  const progress = progressOf(nodes, node.id);
-  const complete = isComplete(nodes, node.id);
+  const progress = progressFor(node.id);
+  const complete = isDone(progress);
   const trail = pathTo(index, node.id).slice(0, -1);
   const childLevel = levelLabel(depth + 1);
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/'));
@@ -58,11 +69,24 @@ export function NodeScreen({ nodeId }: { nodeId: NodeId | null }) {
   const overdue = !!node.dueDate && node.dueDate < today && !complete;
 
   const requestToggle = (target: ProgressNode) => {
-    if (childrenOf(nodes, target.id).length === 0) store.toggleComplete(target.id);
+    if (kids(target.id).length === 0) store.toggleComplete(target.id);
     else setDialog({ confirmToggle: target.id });
   };
   const confirmTarget = typeof dialog === 'object' ? index.get(dialog.confirmToggle) : undefined;
-  const confirmComplete = confirmTarget ? isComplete(nodes, confirmTarget.id) : false;
+  const confirmComplete = confirmTarget ? isDone(progressFor(confirmTarget.id)) : false;
+
+  const tree: TreeContext = {
+    kids,
+    progress: progressFor,
+    today,
+    color: projectColor,
+    expanded,
+    reorder,
+    onToggleExpand: toggleExpanded,
+    onOpen: (target) => router.push(`/node/${target.id}`),
+    onCheck: requestToggle,
+    onMove: (target, direction) => store.moveSibling(target.id, direction),
+  };
 
   const applyManual = (raw: string) => {
     const value = Number(raw.replace(',', '.'));
@@ -71,7 +95,8 @@ export function NodeScreen({ nodeId }: { nodeId: NodeId | null }) {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.bg }}>
+    // Le clavier occupe le bas de l'écran : tout le contenu se raccourcit d'autant.
+    <View style={{ flex: 1, backgroundColor: theme.bg, paddingBottom: keyboard }}>
       {/* En-tête */}
       <View style={[styles.header, { paddingTop: insets.top + 8, backgroundColor: theme.card, borderColor: theme.border }]}>
         {isProject ? (
@@ -88,7 +113,7 @@ export function NodeScreen({ nodeId }: { nodeId: NodeId | null }) {
         <IconButton name="create-outline" onPress={() => setDialog('editSelf')} label={t('common.edit')} />
       </View>
 
-      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 24 }]} keyboardShouldPersistTaps="handled">
+      <KeyboardScrollView contentContainerStyle={[styles.content, { paddingBottom: 24 }]}>
         {trail.length > 0 ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
             <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: projectColor, marginRight: 6 }} />
@@ -184,21 +209,8 @@ export function NodeScreen({ nodeId }: { nodeId: NodeId | null }) {
           </View>
         )}
 
-        {children.map((child, i) => (
-          <ChildRow
-            key={child.id}
-            child={child}
-            siblings={children}
-            progress={progressOf(nodes, child.id)}
-            complete={isComplete(nodes, child.id)}
-            reorder={reorder}
-            canUp={i > 0}
-            canDown={i < children.length - 1}
-            today={today}
-            onOpen={() => router.push(`/node/${child.id}`)}
-            onToggle={() => requestToggle(child)}
-            onMove={(d) => store.moveSibling(child.id, d)}
-          />
+        {children.map((child) => (
+          <TreeBranch key={child.id} node={child} siblings={children} ctx={tree} level={0} />
         ))}
 
         {isLeaf && canAddChild(index, node.id) ? (
@@ -243,6 +255,7 @@ export function NodeScreen({ nodeId }: { nodeId: NodeId | null }) {
           maxLength={10000}
           style={{
             minHeight: 96,
+            maxHeight: 240,
             textAlignVertical: 'top',
             borderWidth: 1,
             borderColor: theme.border,
@@ -253,9 +266,9 @@ export function NodeScreen({ nodeId }: { nodeId: NodeId | null }) {
             lineHeight: 21,
           }}
         />
-      </ScrollView>
+      </KeyboardScrollView>
 
-      {isProject ? <BottomBar active="home" /> : <View style={{ height: insets.bottom }} />}
+      {keyboard > 0 ? null : isProject ? <BottomBar active="home" /> : <View style={{ height: insets.bottom }} />}
 
       <WeightsSheet
         visible={dialog === 'weights'}
@@ -377,88 +390,10 @@ function DetailRow({
   );
 }
 
-function ChildRow({
-  child,
-  siblings,
-  progress,
-  complete,
-  reorder,
-  canUp,
-  canDown,
-  today,
-  onOpen,
-  onToggle,
-  onMove,
-}: {
-  child: ProgressNode;
-  siblings: ProgressNode[];
-  progress: number;
-  complete: boolean;
-  reorder: boolean;
-  canUp: boolean;
-  canDown: boolean;
-  today: string;
-  onOpen: () => void;
-  onToggle: () => void;
-  onMove: (direction: -1 | 1) => void;
-}) {
-  const theme = useTheme();
-  const share = effectivePercent(siblings, child.id);
-  const overdue = !!child.dueDate && child.dueDate < today && !complete;
-  return (
-    <Pressable
-      onPress={reorder ? undefined : onOpen}
-      accessibilityRole="button"
-      accessibilityLabel={`${child.title}, ${formatPercent(progress)}`}
-      style={[styles.row, { backgroundColor: theme.card, borderColor: theme.border }]}
-    >
-      <Checkbox checked={complete} partial={!complete && progress > 0} onPress={onToggle} label={child.title} />
-      <View style={{ flex: 1, marginLeft: 12 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-          <Text
-            style={{ fontSize: 16, fontWeight: '700', flex: 1, opacity: complete ? 0.6 : 1, textDecorationLine: complete ? 'line-through' : 'none' }}
-            numberOfLines={2}
-          >
-            {child.title}
-          </Text>
-        </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <View style={{ flex: 1 }}>
-            <ProgressBar value={progress} />
-          </View>
-          <Text style={{ fontSize: 13, fontWeight: '700', width: 52, textAlign: 'right' }}>{formatPercent(progress)}</Text>
-        </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 10, flexWrap: 'wrap' }}>
-          <Text style={{ color: theme.muted, fontSize: 12 }}>
-            {child.weight !== null ? '🔒 ' : ''}
-            {t('row.share', { pct: Math.round(share * 10) / 10 })}
-          </Text>
-          {child.dueDate ? (
-            <Text style={{ color: overdue ? theme.error : theme.muted, fontSize: 12, fontWeight: overdue ? '700' : '500' }}>
-              ⚑ {formatDate(child.dueDate)}
-            </Text>
-          ) : null}
-          {child.note ? <Ionicons name="document-text-outline" size={13} color={theme.muted} /> : null}
-          {child.reminderAt ? <Ionicons name="notifications-outline" size={13} color={theme.muted} /> : null}
-        </View>
-      </View>
-      {reorder ? (
-        <View style={{ marginLeft: 6 }}>
-          <IconButton name="chevron-up" label={t('list.moveUp')} onPress={() => onMove(-1)} disabled={!canUp} />
-          <IconButton name="chevron-down" label={t('list.moveDown')} onPress={() => onMove(1)} disabled={!canDown} />
-        </View>
-      ) : (
-        <Ionicons name="chevron-forward" size={18} color={theme.muted} style={{ marginLeft: 8 }} />
-      )}
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingBottom: 10, borderBottomWidth: 1 },
   headerTitle: { fontSize: 18, fontWeight: '800', marginRight: 6 },
   content: { padding: 16, width: '100%', maxWidth: 720, alignSelf: 'center' },
   sectionHead: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 },
-  row: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, borderWidth: 1, padding: 14, marginBottom: 10 },
 });
 
