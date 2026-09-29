@@ -1,0 +1,47 @@
+# Construit un APK Android installable directement (sans Google Play, sans compte Expo).
+# Lancer à la main (Actions → « APK Android » → Run workflow) ou en poussant un tag « v* » (ex. v0.2.0) :
+# l'APK est alors joint à la release GitHub correspondante.
+# L'APK est signé avec la clé de debug du modèle Expo : suffisant pour l'installer soi-même.
+name: APK Android
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: Générer le projet Android natif
+        run: npx expo prebuild --platform android --no-install
+      - name: Compiler l'APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+      - name: Renommer l'APK
+        run: cp android/app/build/outputs/apk/release/app-release.apk Alam.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Alam-apk
+          path: Alam.apk
+      - name: Joindre à la release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Alam.apk

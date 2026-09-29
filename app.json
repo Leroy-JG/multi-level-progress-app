@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "Alam",
+    "slug": "multi-level-progress-app",
+    "version": "0.2.0",
+    "orientation": "portrait",
+    "scheme": "wprogress",
+    "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
+    "backgroundColor": "#F4EBD9",
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "backgroundColor": "#26428B",
+          "dark": { "backgroundColor": "#14213D", "image": "./assets/splash-icon.png" }
+        }
+      ],
+      ["expo-notifications", { "color": "#26428B" }]
+    ],
+    "android": {
+      "package": "com.alam.app",
+      "adaptiveIcon": { "foregroundImage": "./assets/adaptive-icon.png", "backgroundColor": "#26428B" },
+      "permissions": ["POST_NOTIFICATIONS"]
+    },
+    "ios": { "bundleIdentifier": "com.alam.app", "supportsTablet": true },
+    "web": { "bundler": "metro", "output": "single", "favicon": "./assets/favicon.png", "name": "Alam", "shortName": "Alam", "lang": "fr" }
+  }
+}

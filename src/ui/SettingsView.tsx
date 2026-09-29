@@ -1,0 +1,130 @@
+import { useState } from 'react';
+import { View } from 'react-native';
+import { ImportError, exportData, parseImport } from '../domain/exchange';
+import type { ThemeMode } from '../domain/settings';
+import { LANGUAGES, t } from '../i18n';
+import { useStore } from '../store/store';
+import { Button, Card, ConfirmSheet, Field, Segmented, Sheet, Text } from './components';
+import { canPickFile, pickTextFile, shareText } from './files';
+import { useTheme } from './theme';
+
+
+export function SettingsView() {
+  const theme = useTheme();
+  const store = useStore();
+  const [importOpen, setImportOpen] = useState(false);
+  const [text, setText] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState<ReturnType<typeof parseImport> | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const doExport = async () => {
+    const stamp = new Date().toISOString().slice(0, 10);
+    try {
+      await shareText(`alam-sauvegarde-${stamp}.json`, exportData(store.nodes, Date.now()));
+      setMessage(t('settings.exported'));
+    } catch {
+      setMessage(t('settings.exportFailed'));
+    }
+  };
+
+  const tryParse = (source: string) => {
+    try {
+      setPending(parseImport(source));
+      setError(null);
+    } catch (e) {
+      setError(e instanceof ImportError ? t(`import.${e.message}` as 'import.invalid_json') : t('import.invalid_format'));
+    }
+  };
+
+  const pickFile = async () => {
+    const content = await pickTextFile();
+    if (content !== null) tryParse(content);
+  };
+
+  return (
+    <View>
+      <Text style={{ fontSize: 17, fontWeight: '800', marginBottom: 10 }}>{t('settings.appearance')}</Text>
+      <Card>
+        <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600', marginBottom: 8 }}>{t('settings.theme')}</Text>
+        <Segmented<ThemeMode>
+          value={store.settings.themeMode}
+          onChange={store.setThemeMode}
+          options={[
+            { value: 'auto', label: t('settings.themeAuto') },
+            { value: 'light', label: t('settings.themeLight') },
+            { value: 'dark', label: t('settings.themeDark') },
+          ]}
+        />
+        <Text style={{ color: theme.muted, fontSize: 12, marginTop: 8 }}>{t('settings.themeHelp')}</Text>
+        <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600', marginTop: 16 }}>{t('settings.language')}</Text>
+        <Text style={{ marginTop: 4 }}>{LANGUAGES.fr?.label}</Text>
+      </Card>
+
+      <Text style={{ fontSize: 17, fontWeight: '800', marginTop: 24, marginBottom: 10 }}>{t('settings.data')}</Text>
+      <Card>
+        <Text style={{ color: theme.muted, lineHeight: 20, marginBottom: 14 }}>{t('settings.dataHelp')}</Text>
+        <View style={{ gap: 10 }}>
+          <Button title={t('settings.export')} onPress={doExport} />
+          <Button
+            title={t('settings.import')}
+            variant="ghost"
+            onPress={() => {
+              setText('');
+              setError(null);
+              setImportOpen(true);
+            }}
+          />
+        </View>
+        {message ? (
+          <Text style={{ color: theme.success, marginTop: 12 }} accessibilityLiveRegion="polite">
+            {message}
+          </Text>
+        ) : null}
+      </Card>
+
+      <Text style={{ color: theme.muted, fontSize: 12, textAlign: 'center', marginTop: 28 }}>{t('settings.about')}</Text>
+
+      <Sheet visible={importOpen && !pending} title={t('settings.import')} onClose={() => setImportOpen(false)}>
+        {canPickFile ? <Button title={t('settings.pickFile')} variant="ghost" onPress={pickFile} style={{ marginBottom: 14 }} /> : null}
+        <Field
+          label={t('settings.pasteLabel')}
+          value={text}
+          onChangeText={(v) => {
+            setText(v);
+            setError(null);
+          }}
+          multiline
+          style={{ minHeight: 120, textAlignVertical: 'top' }}
+          placeholder="{ ... }"
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+        {error ? (
+          <Text style={{ color: theme.error, marginBottom: 10 }} accessibilityLiveRegion="polite">
+            {error}
+          </Text>
+        ) : null}
+        <Button title={t('settings.importCheck')} disabled={text.trim() === ''} onPress={() => tryParse(text)} />
+      </Sheet>
+
+      <ConfirmSheet
+        visible={!!pending}
+        title={t('settings.importConfirmTitle')}
+        message={t('settings.importConfirmText', {
+          projects: pending?.filter((n) => n.parentId === null).length ?? 0,
+          elements: pending?.length ?? 0,
+        })}
+        confirmLabel={t('settings.importConfirm')}
+        danger
+        onClose={() => setPending(null)}
+        onConfirm={() => {
+          if (pending) store.replaceAll(pending);
+          setPending(null);
+          setImportOpen(false);
+          setMessage(t('settings.imported'));
+        }}
+      />
+    </View>
+  );
+}
