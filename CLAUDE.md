@@ -144,7 +144,8 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
       à 2 étages (plus lisible). Nom « Alam », splash. Générée par `scripts/make-icons.mjs`
 - [x] PWA : `public/` (manifest, sw.js qui précache page + JS, icônes), testée hors ligne et sous sous-chemin GitHub Pages
 - [x] Workflows : `.github/workflows/pages.yml` (site, sur push `main`) et `android-apk.yml` (APK, à la main ou tag `v*`)
-      — **jamais exécutés** (ne peuvent pas l'être depuis ici)
+      — **exécutés pour de bon le 2026-09-30** (PR #11 fusionnée, commit `b3816a2`) : site déployé, APK 2.2.0 construit en ≈ 25 min,
+      artefact `Alam-apk` (`Alam.apk`, ≈ 53,7 Mo, conservé jusqu'au 2026-12-29 ; run 36714874936)
 - [x] Branche fusionnée dans `main` ; le workflow « APK Android » a été lancé sur `main` (artefact `Alam-apk`)
 - [ ] À faire par l'utilisateur : activer Pages si ce n'est pas fait (Réglages → Pages → Source : GitHub Actions) ;
       télécharger l'artefact : Actions → « APK Android » → dernier run réussi → `Alam-apk` (zip contenant `Alam.apk`)
@@ -153,10 +154,11 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
       contenu, effacement + VACUUM sans reste), `Switch` / `AppState` / partage d'une copie sur Android. Testés ici : 91 tests unitaires, parcours web
       complet dans Chromium (59 vérifications : proposition au 1er projet, activation, période avec horloge simulée, empilement, copie identique,
       limite, export, restauration, suppression, effacement total, aucune requête externe / violation CSP) + l'ancien parcours (24)
-- [ ] **Jamais exécutés** (impossible depuis l'environnement cloud) : étape « Vérifier l'APK (confidentialité) » du workflow APK (`aapt2`) ;
-      `eraseAll` natif (SQL testé avec `node:sqlite`, pas avec expo-sqlite sur téléphone). Testés ici : manifeste généré par
-      `expo prebuild` (INTERNET retiré, allowBackup=false), parcours web complet dans Chromium (24 vérifications : aucune requête
-      externe, aucune violation CSP, hors ligne, export, effacement, restauration)
+- [x] Contrôles de confidentialité du workflow APK **validés sur le vrai CI** (run 36714874936) : étape « Vérifier le manifeste généré » et
+      étape « Vérifier l'APK (confidentialité) » (`aapt2`) passées ; l'APK final ne déclare **pas** `INTERNET` (voir `PRIVACY.md`, tableau des permissions)
+- [ ] **Jamais exécuté sur téléphone** : `eraseAll` natif (SQL testé avec `node:sqlite`, pas avec expo-sqlite sur téléphone). Testés ici :
+      manifeste généré par `expo prebuild` (INTERNET retiré, allowBackup=false), parcours web complet dans Chromium (24 vérifications :
+      aucune requête externe, aucune violation CSP, hors ligne, export, effacement, restauration)
 - [ ] Idées : glisser-déposer pour réordonner, langue anglaise (`src/i18n/en.ts`), sauvegarde plus robuste sur iPhone
       (Safari peut vider le stockage d'un site non installé après ~7 jours sans visite)
 
@@ -214,7 +216,12 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
 
 ## Sécurité (audit du 2026-09-29)
 - Vérifié : aucun secret ni clé dans le dépôt ; SQL 100 % paramétré ; pas d'`eval`/`innerHTML`/WebView/lien externe ;
-  permissions Android : notifications (+ vibration, redémarrage) seulement — **corrigé en 2.1.0** : jusqu'à la 2.0.1 l'APK déclarait aussi INTERNET, SYSTEM_ALERT_WINDOW et le stockage externe (permissions par défaut d'Expo), désormais bloquées ; le service worker ne touche que les GET de même origine ;
+  permissions Android : **corrigé en 2.1.0** : jusqu'à la 2.0.1 l'APK déclarait aussi INTERNET, SYSTEM_ALERT_WINDOW et le stockage externe (permissions par défaut d'Expo), désormais bloquées.
+  Liste réelle de l'APK 2.2.0 (`aapt2`, relevée sur le CI) : notifications, vibration, redémarrage **et** ACCESS_NETWORK_STATE (lecture seule), WAKE_LOCK,
+  réception FCM (`c2dm.permission.RECEIVE`), install referrer Play, permission interne `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`, ~15 permissions de badge de lanceurs
+  (Samsung, HTC, Sony, Huawei, Oppo…) — toutes héritées d'`expo-notifications` et de ses dépendances, **aucune n'ouvre l'accès à Internet** (détail dans `PRIVACY.md`).
+  Pour réduire cette liste il faudrait les ajouter à `android.blockedPermissions` (à tester : risque de casser les rappels) ; non fait ;
+  le service worker ne touche que les GET de même origine ;
   l'import JSON est validé strictement (structure, profondeur, doublons, couleur `#RRGGBB`, ≤ 20 000 éléments).
 - `npm audit --omit=dev` : 0 haute/critique, 14 modérées, toutes dans l'outillage de build Expo (`uuid`,
   `decode-uri-component`) — non livrées dans l'app ; ne pas faire `audit fix --force` (casse Expo).

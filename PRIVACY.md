@@ -23,11 +23,30 @@ Vos projets, sous-projets, tâches, sous-tâches, notes, dates, rappels et régl
 
 | Cible | Verrou technique | Contrôle automatique |
 |---|---|---|
-| APK Android | La permission `INTERNET` est **retirée** du manifeste (`android.blockedPermissions`) : l'application n'a matériellement pas le droit d'ouvrir une connexion. La sauvegarde automatique Google est désactivée (`android.allowBackup: false`) : ni cloud Google, ni transfert entre téléphones. Permissions restantes : uniquement celles des rappels locaux (notifications, vibration, reprogrammation après redémarrage du téléphone). | Le workflow « APK Android » contrôle le manifeste généré, puis l'APK final (`aapt2`) : le build échoue si `INTERNET` réapparaît ou si la sauvegarde Android est réactivée. |
+| APK Android | La permission `INTERNET` est **retirée** du manifeste (`android.blockedPermissions`) : l'application n'a matériellement pas le droit d'ouvrir une connexion. La sauvegarde automatique Google est désactivée (`android.allowBackup: false`) : ni cloud Google, ni transfert entre téléphones. Les autres permissions déclarées sont détaillées ci-dessous : aucune ne donne accès à Internet. | Le workflow « APK Android » contrôle le manifeste généré, puis l'APK final (`aapt2`) : le build échoue si `INTERNET` réapparaît ou si la sauvegarde Android est réactivée. |
 | PWA | Politique de sécurité du navigateur `connect-src 'none'` (`public/index.html`) : la page ne peut ouvrir **aucune** connexion (fetch, XHR, WebSocket, beacon). Aucune ressource externe (police, script, image) : tout vient du site lui-même. | Le workflow « Déployer le site » vérifie la politique dans la page publiée. |
 | Code et dépendances | Aucun appel réseau dans `src/` et `app/`, aucun paquet de mesure d'audience / réseau / mise à jour à distance. | `src/privacy.test.ts` (lancé par `npm test`, donc à chaque build) : il échoue si l'un de ces verrous saute. |
 
 Le code est ouvert : vous pouvez tout relire dans ce dépôt.
+
+### Permissions réellement déclarées par l'APK
+
+Liste relevée par `aapt2 dump permissions` sur l'APK 2.2.0 construit par GitHub Actions (le build l'affiche à chaque fois,
+dans l'étape « Vérifier l'APK (confidentialité) »). Elle est un peu plus large que les seules permissions des rappels, parce
+que la bibliothèque de notifications (`expo-notifications`) et ses dépendances en ajoutent :
+
+| Permission | À quoi elle sert | Donne accès à Internet ? |
+|---|---|---|
+| `POST_NOTIFICATIONS`, `VIBRATE`, `RECEIVE_BOOT_COMPLETED` | afficher vos rappels, faire vibrer, reprogrammer les rappels après un redémarrage du téléphone | non |
+| `WAKE_LOCK` | garder le téléphone éveillé le temps d'afficher un rappel | non |
+| `ACCESS_NETWORK_STATE` | savoir si le téléphone est connecté (lecture de l'état seulement) ; elle n'autorise **aucune** connexion | non |
+| `com.google.android.c2dm.permission.RECEIVE` | réception de notifications « push » Google (Firebase), héritée de la bibliothèque : Alam n'en utilise **aucune**, et sans `INTERNET` elle ne peut de toute façon rien recevoir | non |
+| `com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE` | héritée d'une dépendance ; ne concerne que les installations depuis Google Play (Alam n'y est pas) | non |
+| `com.alam.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` | permission interne à Alam (sécurise ses propres échanges entre composants) | non |
+| Permissions de badge d'icône (`com.sec…`, `com.htc…`, `com.sonyericsson…`, `com.huawei…`, `com.oppo…`, `me.everything…`, `READ_APP_BADGE`, etc.) | pastille de notification sur l'icône de certains lanceurs (Samsung, HTC, Sony, Huawei, Oppo…) | non |
+
+Ce qui compte pour la garantie est ce qui **manque** : sans `android.permission.INTERNET`, Android interdit à l'application
+d'ouvrir la moindre connexion réseau. Le build échoue si cette permission réapparaît.
 
 ## Ce que cela ne couvre pas
 
