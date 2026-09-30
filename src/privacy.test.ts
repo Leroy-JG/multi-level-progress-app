@@ -68,6 +68,31 @@ describe('Android : rien ne sort, rien n’est sauvegardé dans le cloud', () =>
     expect(expo.android.permissions as string[]).not.toContain('android.permission.INTERNET');
   });
 
+  it('les permissions inutiles héritées des bibliothèques (Firebase, badges de lanceurs, install referrer) sont retirées', () => {
+    const blocked = expo.android.blockedPermissions as string[];
+    const expected = [
+      'com.google.android.c2dm.permission.RECEIVE',
+      'com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE',
+      'android.permission.READ_APP_BADGE',
+      'com.sec.android.provider.badge.permission.READ',
+      'com.sec.android.provider.badge.permission.WRITE',
+      'com.htc.launcher.permission.READ_SETTINGS',
+      'com.htc.launcher.permission.UPDATE_SHORTCUT',
+      'com.sonyericsson.home.permission.BROADCAST_BADGE',
+      'com.sonymobile.home.permission.PROVIDER_INSERT_BADGE',
+      'com.anddoes.launcher.permission.UPDATE_COUNT',
+      'com.majeur.launcher.permission.UPDATE_BADGE',
+      'com.huawei.android.launcher.permission.CHANGE_BADGE',
+      'com.huawei.android.launcher.permission.READ_SETTINGS',
+      'com.huawei.android.launcher.permission.WRITE_SETTINGS',
+      'com.oppo.launcher.permission.READ_SETTINGS',
+      'com.oppo.launcher.permission.WRITE_SETTINGS',
+      'me.everything.badger.permission.BADGE_COUNT_READ',
+      'me.everything.badger.permission.BADGE_COUNT_WRITE',
+    ];
+    for (const p of expected) expect(blocked).toContain(p);
+  });
+
   it('aucune mise à jour à distance ni service Google configuré', () => {
     expect(expo.updates).toBeUndefined();
     expect(expo.android.googleServicesFile).toBeUndefined();

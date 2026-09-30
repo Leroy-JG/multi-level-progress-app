@@ -53,6 +53,7 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
 - **Verrous techniques** : APK = permission `INTERNET` retirée (`android.blockedPermissions`, avec `SYSTEM_ALERT_WINDOW` et
   `READ/WRITE_EXTERNAL_STORAGE` inutiles) + `android.allowBackup: false` (ni cloud Google ni transfert : **remplace** l'ancien
   choix « sauvegarde automatique activée ») ; PWA = CSP `connect-src 'none'` dans `public/index.html`.
+  Depuis la 2.2.1 : aussi les permissions FCM / install referrer / badges de lanceurs (voir « Sécurité »).
   Note : `expo-file-system` (dépendance d'Expo) déclare INTERNET → seul `blockedPermissions` (`tools:node="remove"`) l'enlève du manifeste fusionné.
 - **Garde-fous** : `src/privacy.test.ts` (aucun appel réseau dans `src/`+`app/`, aucun paquet de télémétrie / réseau / mise à
   jour à distance, `allowBackup=false`, INTERNET bloqué, CSP sans hôte externe, service worker même-origine) ; workflow APK :
@@ -134,6 +135,8 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
 - [x] **2.1.0** (`versionCode` 4) : données uniquement locales (voir section dédiée) — verrous, garde-fous, carte de confidentialité,
       date de dernière sauvegarde, effacement total, stockage persistant web, restauration depuis l'accueil, `PRIVACY.md`
 - [x] **2.2.0** (`versionCode` 5) : sauvegardes automatiques facultatives + historique + proposition au premier projet (voir section dédiée)
+- [x] **2.2.1** (`versionCode` 6) : permissions superflues retirées (FCM, install referrer, badges de lanceurs) + liste blanche des permissions dans le workflow APK ;
+      aucun changement fonctionnel (les rappels ne doivent pas changer : **non testé sur téléphone**)
 - [ ] **Non testé sur téléphone** (SQLite natif jamais exécuté ici) → Expo Go. Idem pour le **clavier Android** de la v2 :
       la logique est testée dans Chromium (fenêtre réduite pour simuler le clavier) mais pas avec un vrai clavier Android
 - [x] Rappels : notifications locales via `expo-notifications` (`src/notifications`), **code jamais exécuté sur un vrai
@@ -217,10 +220,12 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
 ## Sécurité (audit du 2026-09-29)
 - Vérifié : aucun secret ni clé dans le dépôt ; SQL 100 % paramétré ; pas d'`eval`/`innerHTML`/WebView/lien externe ;
   permissions Android : **corrigé en 2.1.0** : jusqu'à la 2.0.1 l'APK déclarait aussi INTERNET, SYSTEM_ALERT_WINDOW et le stockage externe (permissions par défaut d'Expo), désormais bloquées.
-  Liste réelle de l'APK 2.2.0 (`aapt2`, relevée sur le CI) : notifications, vibration, redémarrage **et** ACCESS_NETWORK_STATE (lecture seule), WAKE_LOCK,
-  réception FCM (`c2dm.permission.RECEIVE`), install referrer Play, permission interne `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`, ~15 permissions de badge de lanceurs
-  (Samsung, HTC, Sony, Huawei, Oppo…) — toutes héritées d'`expo-notifications` et de ses dépendances, **aucune n'ouvre l'accès à Internet** (détail dans `PRIVACY.md`).
-  Pour réduire cette liste il faudrait les ajouter à `android.blockedPermissions` (à tester : risque de casser les rappels) ; non fait ;
+  **2.2.1 : l'APK ne déclare plus que 6 permissions** (relevé `aapt2` sur le CI) : `POST_NOTIFICATIONS`, `VIBRATE`, `RECEIVE_BOOT_COMPLETED`, `WAKE_LOCK` et
+  `ACCESS_NETWORK_STATE` (les deux dernières héritées de Firebase Messaging via `expo-notifications`, gardées par prudence : les retirer risquerait un
+  `SecurityException` impossible à tester sans téléphone) et la permission interne `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`. Retirées en 2.2.1 via `blockedPermissions` :
+  FCM (`c2dm.permission.RECEIVE`), install referrer Play, 16 permissions de badge de lanceurs (Samsung, HTC, Sony, Huawei, Oppo…) ; Alam n'affiche pas de compteur
+  sur son icône (`shouldSetBadge: false`). **Aucune permission restante n'ouvre l'accès à Internet** (détail dans `PRIVACY.md`). Le workflow APK applique une
+  **liste blanche** sur l'APK final : toute autre permission fait échouer le build (la bloquer dans `app.json` ou l'autoriser dans le workflow ET `PRIVACY.md`).
   le service worker ne touche que les GET de même origine ;
   l'import JSON est validé strictement (structure, profondeur, doublons, couleur `#RRGGBB`, ≤ 20 000 éléments).
 - `npm audit --omit=dev` : 0 haute/critique, 14 modérées, toutes dans l'outillage de build Expo (`uuid`,
@@ -241,7 +246,7 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
 
 ## Conventions
 - Développement sur la branche désignée par la session (v1 : `claude/create-application-dodfio`, mergée dans `main` ;
-  v2 : `claude/serene-mendel-6n23bn` ; 2.1.0 et 2.2.0 : `ccr-6cb66c58-01zp72`). Pas de PR sans demande explicite de l'utilisateur.
+  v2 : `claude/serene-mendel-6n23bn` ; 2.1.0, 2.2.0 et 2.2.1 : `ccr-6cb66c58-01zp72`). Pas de PR sans demande explicite de l'utilisateur.
 - Ne jamais commiter `node_modules/` ni `dist/`.
 - Livrer un nouvel APK : incrémenter `version` (`app.json` + `package.json`/lock via `npm version X.Y.Z --no-git-tag-version`)
   ET `android.versionCode` (sinon Android peut refuser de remplacer l'ancien), fusionner dans `main`, puis lancer
