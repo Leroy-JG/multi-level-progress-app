@@ -1,12 +1,23 @@
+import { DEFAULT_AUTO_BACKUP, normalizeAutoBackup, type AutoBackupSettings } from './autobackup';
+
 export type ThemeMode = 'auto' | 'light' | 'dark';
 
 export interface Settings {
   themeMode: ThemeMode;
-  /** Date (ms) de la dernière sauvegarde exportée ; null si aucune. Les données n'existent que sur l'appareil. */
+  /** Date (ms) de la dernière sauvegarde exportée en fichier ; null si aucune. Les données n'existent que sur l'appareil. */
   lastBackupAt: number | null;
+  /** Copies automatiques gardées sur l'appareil (facultatives, désactivées par défaut). */
+  autoBackup: AutoBackupSettings;
+  /** La proposition d'activer les copies automatiques (à la création du tout premier projet) a déjà été affichée. */
+  backupPromptSeen: boolean;
 }
 
-export const DEFAULT_SETTINGS: Settings = { themeMode: 'auto', lastBackupAt: null };
+export const DEFAULT_SETTINGS: Settings = {
+  themeMode: 'auto',
+  lastBackupAt: null,
+  autoBackup: DEFAULT_AUTO_BACKUP,
+  backupPromptSeen: false,
+};
 
 export function normalizeSettings(raw: unknown): Settings {
   const obj = (raw ?? {}) as Partial<Settings>;
@@ -15,5 +26,7 @@ export function normalizeSettings(raw: unknown): Settings {
   return {
     themeMode: mode === 'light' || mode === 'dark' || mode === 'auto' ? mode : 'auto',
     lastBackupAt: typeof backup === 'number' && Number.isFinite(backup) ? backup : null,
+    autoBackup: normalizeAutoBackup(obj.autoBackup),
+    backupPromptSeen: obj.backupPromptSeen === true,
   };
 }

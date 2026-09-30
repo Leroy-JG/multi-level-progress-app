@@ -41,6 +41,24 @@ Le code est ouvert : vous pouvez tout relire dans ce dépôt.
 - **Vos exports.** Quand vous exportez une sauvegarde, c'est vous qui choisissez sa destination (fichier, e-mail, cloud…).
   À partir de là, elle vit là où vous l'avez envoyée.
 
+## Sauvegardes automatiques (facultatives)
+
+Réglages → « Sauvegardes automatiques ». **Désactivées par défaut** : rien n'est copié tant que vous ne l'avez pas décidé.
+Une fois activées, Alam garde des copies de vos projets à l'ouverture de l'application, dès que le délai choisi est écoulé
+(une semaine par défaut ; vous réglez le nombre de jours ou de semaines).
+
+- Chaque copie **s'ajoute** à l'historique : la précédente n'est jamais écrasée. Seules les plus anciennes, au-delà du
+  nombre de copies à garder (10 par défaut), sont supprimées. Une copie identique à la précédente n'est pas empilée.
+- Les copies sont **légères** (JSON compact, sans mise en forme) et restent **sur l'appareil**, dans le même espace privé que
+  vos données (table SQLite sur Android, IndexedDB du navigateur sur le web). Rien n'est envoyé nulle part.
+- Elles ne sont **pas chiffrées**, comme vos données, et « Effacer toutes mes données » les supprime aussi.
+- **Elles protègent d'une erreur** (suppression, mauvais import, mauvaise manipulation), **pas de la perte du téléphone,
+  d'une désinstallation ou d'un stockage vidé** : elles disparaissent alors avec le reste. Pour cela, exportez un fichier
+  (Réglages, ou depuis l'historique) et gardez-le ailleurs.
+- Depuis l'historique, vous pouvez restaurer une copie (l'état actuel est d'abord ajouté à l'historique, pour pouvoir revenir
+  en arrière), l'exporter dans un fichier ou la supprimer.
+- Il n'y a pas de tâche de fond : une copie n'a lieu que quand vous ouvrez (ou rouvrez) l'application.
+
 ## La contrepartie : personne d'autre n'a de copie
 
 - Désinstaller Alam, effacer les données du site, ou perdre le téléphone **supprime vos données** — sauf si vous avez exporté une sauvegarde.
@@ -49,8 +67,8 @@ Le code est ouvert : vous pouvez tout relire dans ce dépôt.
 - **Nouvel appareil, réinstallation** : « Restaurer une sauvegarde » depuis l'écran d'accueil, ou Réglages → « Importer une sauvegarde ».
 - **Web / iPhone** : Safari peut vider le stockage d'un site non installé après ~7 jours sans visite. Ajoutez Alam à l'écran
   d'accueil, et utilisez « Protéger le stockage » dans les Réglages quand il est proposé.
-- **Tout effacer** : Réglages → « Effacer toutes mes données ». Sur Android, la base est réécrite pour qu'aucune trace des
-  anciennes données ne reste dans le fichier.
+- **Tout effacer** : Réglages → « Effacer toutes mes données » (projets, réglages et copies automatiques). Sur Android, la base
+  est réécrite pour qu'aucune trace des anciennes données ne reste dans le fichier.
 
 ## Modifier ces garanties
 

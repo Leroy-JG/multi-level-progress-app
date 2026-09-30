@@ -49,3 +49,10 @@ export function formatDateTime(timestamp: number): string {
   const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   return `${formatDate(key)} · ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
+
+/** 512 → '512 o', 24 600 → '24,0 Ko', 3 500 000 → '3,3 Mo'. */
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} o`;
+  const [value, unit] = bytes < 1024 * 1024 ? [bytes / 1024, 'Ko'] : [bytes / (1024 * 1024), 'Mo'];
+  return `${value.toFixed(1).replace('.', ',')} ${unit}`;
+}

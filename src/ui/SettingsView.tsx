@@ -1,12 +1,15 @@
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { Pressable, View } from 'react-native';
 import { backupStatus } from '../domain/backup';
 import { ImportError, exportData, parseImport } from '../domain/exchange';
 import type { ThemeMode } from '../domain/settings';
-import { LANGUAGES, formatDateTime, t } from '../i18n';
+import { LANGUAGES, formatDateTime, t, tn } from '../i18n';
 import { useStore } from '../store/store';
 import { Button, Card, ConfirmSheet, Field, Segmented, Sheet, Text } from './components';
 import { canPickFile, pickTextFile, shareText } from './files';
+import { periodLabel } from './BackupsView';
 import { KeyboardScrollView } from './keyboard';
 import { PrivacyCard } from './PrivacyCard';
 import { useTheme } from './theme';
@@ -14,6 +17,7 @@ import { useTheme } from './theme';
 
 export function SettingsView() {
   const theme = useTheme();
+  const router = useRouter();
   const store = useStore();
   const [importOpen, setImportOpen] = useState(false);
   const [text, setText] = useState('');
@@ -104,6 +108,20 @@ export function SettingsView() {
           </Text>
         ) : null}
       </Card>
+
+      <Pressable onPress={() => router.push('/backups')} accessibilityRole="button" accessibilityLabel={t('autobackup.title')} style={{ marginTop: 12 }}>
+        <Card style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontWeight: '700', fontSize: 15 }}>{t('autobackup.title')}</Text>
+            <Text style={{ color: theme.muted, fontSize: 13, marginTop: 2 }}>
+              {store.settings.autoBackup.enabled
+                ? t('autobackup.summary', { period: periodLabel(store.settings.autoBackup), count: tn('autobackup.count', store.backups.length) })
+                : t('autobackup.off')}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={theme.muted} />
+        </Card>
+      </Pressable>
 
       <Card style={{ marginTop: 12 }}>
         <Text style={{ color: theme.muted, lineHeight: 20, marginBottom: 14 }}>{t('settings.eraseHelp')}</Text>

@@ -2,7 +2,7 @@
 import * as SQLite from 'expo-sqlite';
 import { DEFAULT_SETTINGS, normalizeSettings } from '../domain/settings';
 import { normalizeStoredNode, type ProgressNode } from '../domain/types';
-import type { Persistence } from './types';
+import type { BackupKind, BackupMeta, Persistence } from './types';
 
 const SCHEMA_VERSION = 2;
 
@@ -24,6 +24,16 @@ async function migrate(db: SQLite.SQLiteDatabase): Promise<void> {
     );
     CREATE INDEX IF NOT EXISTS idx_nodes_parent ON nodes(parent_id);
     CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY NOT NULL, value TEXT);
+    CREATE TABLE IF NOT EXISTS backups (
+      id TEXT PRIMARY KEY NOT NULL,
+      created_at INTEGER NOT NULL,
+      kind TEXT NOT NULL,
+      projects INTEGER NOT NULL,
+      elements INTEGER NOT NULL,
+      bytes INTEGER NOT NULL,
+      hash TEXT NOT NULL,
+      payload TEXT NOT NULL
+    );
   `);
   if (version < SCHEMA_VERSION) {
     // Transaction : une migration interrompue ne laisse pas la base à moitié modifiée.
@@ -134,11 +144,57 @@ export const persistence: Persistence = {
     await setMeta(await getDb(), 'settings', JSON.stringify(settings));
   },
 
+  async listBackups() {
+    const db = await getDb();
+    // Sans la colonne payload : la liste reste légère, quelle que soit la taille des copies.
+    const rows = await db.getAllAsync<Record<string, unknown>>(
+      'SELECT id, created_at, kind, projects, elements, bytes, hash FROM backups ORDER BY created_at DESC, id DESC',
+    );
+    return rows.map(
+      (r): BackupMeta => ({
+        id: String(r.id),
+        createdAt: Number(r.created_at),
+        kind: r.kind as BackupKind,
+        projects: Number(r.projects),
+        elements: Number(r.elements),
+        bytes: Number(r.bytes),
+        hash: String(r.hash),
+      }),
+    );
+  },
+
+  async readBackup(id) {
+    const db = await getDb();
+    const row = await db.getFirstAsync<{ payload: string }>('SELECT payload FROM backups WHERE id = ?', [id]);
+    return row?.payload ?? null;
+  },
+
+  async addBackup(meta, payload, keep) {
+    const db = await getDb();
+    await db.withTransactionAsync(async () => {
+      await db.runAsync(
+        'INSERT INTO backups (id, created_at, kind, projects, elements, bytes, hash, payload) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [meta.id, meta.createdAt, meta.kind, meta.projects, meta.elements, meta.bytes, meta.hash, payload],
+      );
+      // On ne supprime que les plus anciennes, au-delà du nombre de copies à garder.
+      await db.runAsync(
+        'DELETE FROM backups WHERE id NOT IN (SELECT id FROM backups ORDER BY created_at DESC, id DESC LIMIT ?)',
+        [Math.max(1, keep)],
+      );
+    });
+  },
+
+  async deleteBackup(id) {
+    const db = await getDb();
+    await db.runAsync('DELETE FROM backups WHERE id = ?', [id]);
+  },
+
   async eraseAll() {
     const db = await getDb();
     await db.withTransactionAsync(async () => {
       await db.runAsync('DELETE FROM nodes');
       await db.runAsync('DELETE FROM meta');
+      await db.runAsync('DELETE FROM backups');
     });
     // Réécrit le fichier : les anciennes données ne restent ni dans les pages libres ni dans le journal (WAL).
     await db.execAsync('VACUUM');

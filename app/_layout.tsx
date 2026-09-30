@@ -10,6 +10,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View } from 'react-native';
 import { StoreProvider, useStore } from '../src/store/store';
+import { BackupPrompt } from '../src/ui/BackupPrompt';
 import { SheetProvider } from '../src/ui/SheetHost';
 import { ThemeProvider, useTheme } from '../src/ui/theme';
 
@@ -30,7 +31,9 @@ function Themed() {
       <SheetProvider>
         <Stack screenOptions={{ headerShown: false, animation: 'none', contentStyle: { backgroundColor: theme.bg } }}>
           <Stack.Screen name="node/[id]" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="backups" options={{ animation: 'slide_from_right' }} />
         </Stack>
+        <BackupPrompt />
       </SheetProvider>
     </View>
   );

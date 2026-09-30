@@ -6,6 +6,7 @@ App mobile de suivi de progression de projets multi-niveaux (projets, sous-proje
 - Accordéons : dans la liste de chaque écran, on déploie un sous-projet (ou une tâche) pour voir et cocher son contenu sur place, avec nom et progression à chaque niveau.
 - Projets distincts, avec sélecteur et couleur. Données stockées localement (SQLite / navigateur).
 - **Vos données n'existent que sur votre appareil** : pas de compte, pas de serveur, aucune connexion sortante (permission Internet retirée de l'APK, politique de sécurité `connect-src 'none'` pour la PWA). Voir [PRIVACY.md](PRIVACY.md).
+- **Sauvegardes automatiques facultatives** (Réglages) : activables, période au choix (jours ou semaines, une semaine par défaut), historique de copies légères qui s'empilent, restauration / export / suppression. Proposées une fois à la création du premier projet.
 
 ## Lancer
 ```bash
