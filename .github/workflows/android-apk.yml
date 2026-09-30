@@ -103,10 +103,31 @@ jobs:
             echo "::error::La sauvegarde automatique Android (allowBackup) n'est pas désactivée dans l'APK."
             exit 1
           fi
+      # Android refuse d'installer une mise à jour signée avec une autre clé que l'app déjà installée (il faut alors la
+      # désinstaller, donc perdre ses données). Avec la clé de debug du modèle Expo, l'empreinte doit toujours être la même :
+      # si elle change, le build échoue AVANT que l'APK soit installé. Avec une clé personnelle (secrets ANDROID_*), on se
+      # contente d'afficher l'empreinte (la première fois, changer de clé impose de désinstaller : voir CLAUDE.md).
       - name: Empreinte de la signature
+        env:
+          PERSONAL_KEY: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          # SHA-256 du certificat « CN=Android Debug » du modèle Expo (relevé sur les runs 36701765084 à 36726340562).
+          EXPECTED_DEBUG_SHA256: fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c
         run: |
-          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | tail -1)
-          "$APKSIGNER" verify --print-certs Alam.apk | grep -E "certificate (DN|SHA-256)"
+          set -eu
+          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          OUT=$("$APKSIGNER" verify --print-certs Alam.apk)
+          echo "$OUT" | grep -E "certificate (DN|SHA-256)"
+          if [ -n "$PERSONAL_KEY" ]; then
+            echo "Clé personnelle : empreinte affichée, non comparée à celle de la clé de debug."
+            exit 0
+          fi
+          ACTUAL=$(echo "$OUT" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1)
+          [ -n "$ACTUAL" ] || ACTUAL=$(echo "$OUT" | sed -n 's/^V[0-9] Signer: certificate SHA-256 digest: //p' | head -1)
+          if [ "$ACTUAL" != "$EXPECTED_DEBUG_SHA256" ]; then
+            echo "::error::Signature différente de celle des versions précédentes ($ACTUAL au lieu de $EXPECTED_DEBUG_SHA256) : Android refuserait de mettre à jour l'app installée (désinstallation = perte des données)."
+            exit 1
+          fi
+          echo "Signature identique à celle des versions précédentes."
       - uses: actions/upload-artifact@v4
         with:
           name: Alam-apk

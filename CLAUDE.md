@@ -238,6 +238,14 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
   `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` existent. La clé
   privée doit être générée sur la machine de l'utilisateur (jamais dans une session Claude ni dans le dépôt).
   Changer de clé = l'APK ne s'installe plus par-dessus l'ancien (désinstaller après export d'une sauvegarde).
+- **Garde-fou de signature** (workflow APK, étape « Empreinte de la signature ») : sans secrets `ANDROID_*`, le build **échoue** si le
+  SHA-256 du certificat n'est pas `fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c` (clé de debug Expo, identique sur les runs
+  4 à 8 et sur le `debug.keystore` généré en local) — sinon Android refuserait la mise à jour. Avec une clé personnelle, l'empreinte est seulement affichée.
+  Passer à une clé personnelle : changer volontairement cette situation (désinstaller une fois, après export).
+- Enquête du 2026-09-30 (« j'ai dû désinstaller pour installer la nouvelle version ») : **cause non identifiée**. Vérifié : signature identique (runs 4–8),
+  `applicationId` `com.alam.app` constant, `versionCode` croissant (2, 3, 5, 6) et aucune branche au-dessus de 6, manifeste généré sans différence bloquante.
+  Non vérifié : runs 1–3 (pas d'empreinte affichée), APK non téléchargeables depuis la session (proxy). Il manque le message d'erreur exact d'Android et
+  les versions concernées.
 - Durcissement appliqué : CSP stricte dans `public/index.html` (pas de script ni ressource externe, scripts en ligne
   interdits → l'enregistrement du service worker est dans `public/register-sw.js`), `referrer no-referrer`,
   workflows en lecture seule (écriture uniquement pour le job `release`),
