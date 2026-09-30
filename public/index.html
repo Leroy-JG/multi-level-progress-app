@@ -2,6 +2,10 @@
 <html lang="%LANG_ISO_CODE%">
   <head>
     <meta charset="utf-8" />
+    <!-- Politique de sécurité : uniquement du contenu de ce site (pas de script ni de ressource externe, pas de plugin,
+         pas d'envoi de formulaire). Les styles en ligne sont requis par React Native Web. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'" />
+    <meta name="referrer" content="no-referrer" />
     <!-- interactive-widget : sur Android, la page se raccourcit quand le clavier s'ouvre (le champ actif reste visible). -->
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
     <title>%WEB_TITLE%</title>
@@ -23,13 +27,6 @@
   <body>
     <noscript>Cette application a besoin de JavaScript.</noscript>
     <div id="root"></div>
-    <script>
-      // Hors ligne : le service worker garde l'application en cache après la première visite.
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function () {
-          navigator.serviceWorker.register('sw.js').catch(function () {});
-        });
-      }
-    </script>
+    <script src="register-sw.js" defer></script>
   </body>
 </html>

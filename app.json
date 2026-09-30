@@ -24,6 +24,7 @@
     "android": {
       "package": "com.alam.app",
       "versionCode": 2,
+      "allowBackup": false,
       "adaptiveIcon": { "foregroundImage": "./assets/adaptive-icon.png", "backgroundColor": "#26428B" },
       "permissions": ["POST_NOTIFICATIONS"]
     },

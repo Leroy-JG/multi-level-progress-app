@@ -1,0 +1,19 @@
+# Mises à jour de sécurité automatiques (une PR par groupe), pour les dépendances et les actions GitHub.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    # Expo fixe les versions de ses modules natifs : ne pas les monter à la main.
+    ignore:
+      - dependency-name: expo*
+        update-types: [version-update:semver-major]
+      - dependency-name: react-native*
+        update-types: [version-update:semver-major]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }

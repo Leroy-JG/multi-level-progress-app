@@ -150,7 +150,12 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
   `decode-uri-component`) — non livrées dans l'app ; ne pas faire `audit fix --force` (casse Expo).
 - Limite connue : l'APK est signé avec la clé de debug **publique** du modèle Expo (pratique pour s'auto-installer, mais
   n'importe qui peut produire un APK qui remplace le vôtre). Si l'app est un jour diffusée : clé perso dans les secrets GitHub.
-- Données non chiffrées sur l'appareil (localStorage / SQLite) ; sauvegarde Android autorisée par défaut.
+- Durcissement appliqué : CSP stricte dans `public/index.html` (pas de script ni ressource externe, scripts en ligne
+  interdits → l'enregistrement du service worker est dans `public/register-sw.js`), `referrer no-referrer`,
+  `android.allowBackup: false`, workflows en lecture seule (écriture uniquement pour le job `release`),
+  `persist-credentials: false`, `.github/dependabot.yml` (npm + actions), `SECURITY.md`.
+  Si un jour on charge une ressource externe (police, API), il faut d'abord l'autoriser dans la CSP.
+- Données non chiffrées sur l'appareil (localStorage / SQLite) ; sauvegarde automatique Android désactivée (les données ne partent pas dans le cloud Google : exporter à la main).
 
 ## Conventions
 - Développement sur la branche désignée par la session (v1 : `claude/create-application-dodfio`, mergée dans `main` ;
