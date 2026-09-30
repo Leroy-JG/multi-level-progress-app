@@ -1,6 +1,6 @@
 // Service worker minimal : l'application fonctionne hors ligne après la première visite.
 // Les fichiers de l'application (JS, icônes…) sont mis en cache à la volée ; la navigation retombe sur index.html.
-const CACHE = 'w-cache-v1';
+const CACHE = 'w-cache-v2'; // v2 : nouvelle icône (les icônes sont servies depuis le cache)
 
 // À l'installation : on met en cache la page ET les scripts qu'elle référence, pour que la première visite
 // suffise à fonctionner hors ligne (sans dépendre du cache HTTP du navigateur).
