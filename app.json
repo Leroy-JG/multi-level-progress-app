@@ -2,7 +2,7 @@
   "expo": {
     "name": "Alam",
     "slug": "multi-level-progress-app",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "orientation": "portrait",
     "scheme": "wprogress",
     "userInterfaceStyle": "automatic",
@@ -23,7 +23,7 @@
     ],
     "android": {
       "package": "com.alam.app",
-      "versionCode": 2,
+      "versionCode": 3,
       "adaptiveIcon": { "foregroundImage": "./assets/adaptive-icon.png", "backgroundColor": "#26428B" },
       "permissions": ["POST_NOTIFICATIONS"]
     },
