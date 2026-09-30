@@ -135,8 +135,10 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
 - [x] **2.1.0** (`versionCode` 4) : données uniquement locales (voir section dédiée) — verrous, garde-fous, carte de confidentialité,
       date de dernière sauvegarde, effacement total, stockage persistant web, restauration depuis l'accueil, `PRIVACY.md`
 - [x] **2.2.0** (`versionCode` 5) : sauvegardes automatiques facultatives + historique + proposition au premier projet (voir section dédiée)
-- [x] **2.2.1** (`versionCode` 6) : permissions superflues retirées (FCM, install referrer, badges de lanceurs) + liste blanche des permissions dans le workflow APK ;
-      aucun changement fonctionnel (les rappels ne doivent pas changer : **non testé sur téléphone**)
+- [x] **2.2.1** (`versionCode` 6, PR #13, commit `f06dee1`) : permissions superflues retirées (FCM, install referrer, badges de lanceurs) + liste blanche des permissions
+      dans le workflow APK ; aucun changement fonctionnel (les rappels ne doivent pas changer : **non testé sur téléphone**). Build CI de la branche validé
+      (run 36722846701 : `aapt2` = exactement 6 permissions, sans `INTERNET`, liste blanche passée, même signature de debug que la 2.2.0) ; l'APK à télécharger est
+      l'artefact `Alam-apk` du dernier run réussi de « APK Android » sur `main`.
 - [ ] **Non testé sur téléphone** (SQLite natif jamais exécuté ici) → Expo Go. Idem pour le **clavier Android** de la v2 :
       la logique est testée dans Chromium (fenêtre réduite pour simuler le clavier) mais pas avec un vrai clavier Android
 - [x] Rappels : notifications locales via `expo-notifications` (`src/notifications`), **code jamais exécuté sur un vrai
@@ -157,8 +159,9 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
       contenu, effacement + VACUUM sans reste), `Switch` / `AppState` / partage d'une copie sur Android. Testés ici : 91 tests unitaires, parcours web
       complet dans Chromium (59 vérifications : proposition au 1er projet, activation, période avec horloge simulée, empilement, copie identique,
       limite, export, restauration, suppression, effacement total, aucune requête externe / violation CSP) + l'ancien parcours (24)
-- [x] Contrôles de confidentialité du workflow APK **validés sur le vrai CI** (run 36714874936) : étape « Vérifier le manifeste généré » et
-      étape « Vérifier l'APK (confidentialité) » (`aapt2`) passées ; l'APK final ne déclare **pas** `INTERNET` (voir `PRIVACY.md`, tableau des permissions)
+- [x] Contrôles de confidentialité du workflow APK **validés sur le vrai CI** (runs 36714874936 puis 36722846701) : étape « Vérifier le manifeste généré » et
+      étape « Vérifier l'APK (confidentialité) » (`aapt2`, y compris la liste blanche depuis la 2.2.1) passées ; l'APK final ne déclare **pas** `INTERNET`
+      (voir `PRIVACY.md`, tableau des permissions)
 - [ ] **Jamais exécuté sur téléphone** : `eraseAll` natif (SQL testé avec `node:sqlite`, pas avec expo-sqlite sur téléphone). Testés ici :
       manifeste généré par `expo prebuild` (INTERNET retiré, allowBackup=false), parcours web complet dans Chromium (24 vérifications :
       aucune requête externe, aucune violation CSP, hors ligne, export, effacement, restauration)
@@ -221,13 +224,12 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
 - Vérifié : aucun secret ni clé dans le dépôt ; SQL 100 % paramétré ; pas d'`eval`/`innerHTML`/WebView/lien externe ;
   permissions Android : **corrigé en 2.1.0** : jusqu'à la 2.0.1 l'APK déclarait aussi INTERNET, SYSTEM_ALERT_WINDOW et le stockage externe (permissions par défaut d'Expo), désormais bloquées.
   **2.2.1 : l'APK ne déclare plus que 6 permissions** (relevé `aapt2` sur le CI) : `POST_NOTIFICATIONS`, `VIBRATE`, `RECEIVE_BOOT_COMPLETED`, `WAKE_LOCK` et
-  `ACCESS_NETWORK_STATE` (les deux dernières héritées de Firebase Messaging via `expo-notifications`, gardées par prudence : les retirer risquerait un
-  `SecurityException` impossible à tester sans téléphone) et la permission interne `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`. Retirées en 2.2.1 via `blockedPermissions` :
+  `ACCESS_NETWORK_STATE` (les deux dernières déclarées par une dépendance d'`expo-notifications`, très probablement Firebase Messaging — origine non vérifiée : les AAR
+  ne sont pas téléchargeables ici, proxy 403 ; gardées par prudence, les retirer risquerait un `SecurityException` impossible à tester sans téléphone) et la permission interne `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`. Retirées en 2.2.1 via `blockedPermissions` :
   FCM (`c2dm.permission.RECEIVE`), install referrer Play, 16 permissions de badge de lanceurs (Samsung, HTC, Sony, Huawei, Oppo…) ; Alam n'affiche pas de compteur
   sur son icône (`shouldSetBadge: false`). **Aucune permission restante n'ouvre l'accès à Internet** (détail dans `PRIVACY.md`). Le workflow APK applique une
   **liste blanche** sur l'APK final : toute autre permission fait échouer le build (la bloquer dans `app.json` ou l'autoriser dans le workflow ET `PRIVACY.md`).
-  le service worker ne touche que les GET de même origine ;
-  l'import JSON est validé strictement (structure, profondeur, doublons, couleur `#RRGGBB`, ≤ 20 000 éléments).
+  Le service worker ne touche que les GET de même origine ; l'import JSON est validé strictement (structure, profondeur, doublons, couleur `#RRGGBB`, ≤ 20 000 éléments).
 - `npm audit --omit=dev` : 0 haute/critique, 14 modérées, toutes dans l'outillage de build Expo (`uuid`,
   `decode-uri-component`) — non livrées dans l'app ; ne pas faire `audit fix --force` (casse Expo).
 - Limite connue : l'APK est signé avec la clé de debug **publique** du modèle Expo (pratique pour s'auto-installer, mais
@@ -249,6 +251,7 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
   v2 : `claude/serene-mendel-6n23bn` ; 2.1.0, 2.2.0 et 2.2.1 : `ccr-6cb66c58-01zp72`). Pas de PR sans demande explicite de l'utilisateur.
 - Ne jamais commiter `node_modules/` ni `dist/`.
 - Livrer un nouvel APK : incrémenter `version` (`app.json` + `package.json`/lock via `npm version X.Y.Z --no-git-tag-version`)
-  ET `android.versionCode` (sinon Android peut refuser de remplacer l'ancien), fusionner dans `main`, puis lancer
+  ET `android.versionCode` (sinon Android peut refuser de remplacer l'ancien). Si le changement touche le manifeste / les permissions : lancer d'abord
+  « APK Android » sur la **branche** (workflow_dispatch, `ref` = branche) et lire la sortie `aapt2` avant de fusionner. Puis fusionner dans `main` et lancer
   « APK Android » sur `main`. Changement d'icône ⇒ aussi `CACHE` de `public/sw.js`.
 - Commandes : `npm start`, `npm test`, `npm run typecheck`.

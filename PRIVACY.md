@@ -31,20 +31,21 @@ Le code est ouvert : vous pouvez tout relire dans ce dépôt.
 
 ### Permissions réellement déclarées par l'APK
 
-Depuis la 2.2.1, l'APK ne déclare plus que **6** permissions. Liste relevée par `aapt2 dump permissions` sur l'APK construit par
+Depuis la 2.2.1, l'APK ne déclare plus que **6** permissions. Liste relevée par `aapt2 dump permissions` sur l'APK 2.2.1 construit par
 GitHub Actions (le build l'affiche à chaque fois, dans l'étape « Vérifier l'APK (confidentialité) ») :
 
 | Permission | À quoi elle sert | Donne accès à Internet ? |
 |---|---|---|
 | `POST_NOTIFICATIONS`, `VIBRATE`, `RECEIVE_BOOT_COMPLETED` | afficher vos rappels, faire vibrer, reprogrammer les rappels après un redémarrage du téléphone | non |
-| `WAKE_LOCK` | héritée de la bibliothèque de notifications (réveil du processeur le temps de traiter une notification) | non |
-| `ACCESS_NETWORK_STATE` | héritée de la bibliothèque de notifications (lecture de l'état du réseau) ; elle n'autorise **aucune** connexion | non |
+| `WAKE_LOCK` | déclarée par une dépendance de la bibliothèque de notifications ; permet de garder brièvement le processeur éveillé | non |
+| `ACCESS_NETWORK_STATE` | déclarée par une dépendance de la bibliothèque de notifications ; permet seulement de lire si le téléphone est connecté, elle n'autorise **aucune** connexion | non |
 | `com.alam.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` | permission interne à Alam (sécurise ses propres échanges entre composants) | non |
 
 **Retirées en 2.2.1** (la bibliothèque de notifications et ses dépendances les déclarent, mais Alam n'en a pas l'usage) :
 la réception de notifications « push » Google (`com.google.android.c2dm.permission.RECEIVE`), la lecture du référent d'installation
 Google Play, et les 16 permissions de pastille d'icône propres à certains lanceurs (Samsung, HTC, Sony, Huawei, Oppo…). Conséquence
-assumée : Alam n'affiche pas de compteur sur son icône. Vos rappels, eux, ne changent pas.
+assumée : Alam n'affiche pas de compteur sur son icône (il n'en affichait pas non plus avant). Ces permissions ne servent pas aux rappels
+locaux ; le fonctionnement des rappels sur un téléphone réel n'a toutefois pas encore été confirmé par un test sur appareil.
 
 Ce qui compte pour la garantie est ce qui **manque** : sans `android.permission.INTERNET`, Android interdit à l'application
 d'ouvrir la moindre connexion réseau. Le build échoue si cette permission réapparaît, **et aussi si l'APK déclare la moindre
