@@ -78,6 +78,14 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
   rose-damas `#C9708A`, henne `#6B4A33`, pierre `#8A7F6D`.
 - Icône : simple, à partir des couleurs de la charte (pas de logo fourni).
 
+### Famille d'apps (validé par l'utilisateur)
+- Les futures apps forment une famille avec Alam : **ne changent jamais** l'or (`accent`, `accent-warm`), succès, erreur,
+  crème, noir chaud, pierre ; **changent d'une app à l'autre** le fond de marque bleu (`primary`, celui du logo et des
+  petits rappels dans l'app), le fond sombre et le secondaire. Ces couleurs doivent toujours s'accorder avec l'or.
+- Première étape d'un nouveau projet = décider les couleurs : `docs/famille-de-marque.md` (palettes validées
+  alam / indigo / prune / vin, règle d'accord : teinte du fond entre 210° et 350° + seuils de contraste et d'écart de
+  couleur, code `checkPalette` / `themeFor` / `darkSurfaces`). Alam n'est pas modifiée.
+
 ## Avancement
 - [x] Cadrage, mémoire du projet
 - [x] Expo 57 + TypeScript strict + Vitest ; domaine pur (arbre, poids, progression, mutations, insights, exchange)
