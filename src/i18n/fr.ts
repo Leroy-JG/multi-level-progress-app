@@ -61,6 +61,8 @@ export const fr = {
   'list.moveUp': 'Monter',
   'list.moveDown': 'Descendre',
   'row.share': '{pct} % du total',
+  'row.expand': 'Afficher le contenu de « {name} »',
+  'row.collapse': 'Masquer le contenu de « {name} »',
 
   'detail.title': 'Détails',
   'detail.dueDate': 'Date limite',

@@ -10,6 +10,18 @@ export function childrenOf(nodes: readonly ProgressNode[], parentId: NodeId | nu
   return nodes.filter((n) => n.parentId === parentId).sort((a, b) => a.position - b.position);
 }
 
+/** Enfants triés de chaque parent, calculés en une seule passe (clé `null` = les projets). */
+export function groupByParent(nodes: readonly ProgressNode[]): Map<NodeId | null, ProgressNode[]> {
+  const groups = new Map<NodeId | null, ProgressNode[]>();
+  for (const n of nodes) {
+    const list = groups.get(n.parentId);
+    if (list) list.push(n);
+    else groups.set(n.parentId, [n]);
+  }
+  for (const list of groups.values()) list.sort((a, b) => a.position - b.position);
+  return groups;
+}
+
 /** 1 pour un projet, 2 pour un sous-projet, etc. */
 export function depthOf(index: NodeIndex, id: NodeId): number {
   let depth = 0;

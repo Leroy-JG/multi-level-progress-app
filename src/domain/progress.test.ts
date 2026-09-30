@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { effectivePercent, progressOf, resolveWeights, summarizeWeights } from './progress';
-import { canAddChild, depthOf, indexNodes, pathTo, subtreeIds } from './tree';
+import { effectivePercent, isDone, progressMap, progressOf, resolveWeights, summarizeWeights } from './progress';
+import { canAddChild, childrenOf, depthOf, groupByParent, indexNodes, pathTo, subtreeIds } from './tree';
 import { createNode, type ProgressNode } from './types';
 
 let seq = 0;
@@ -114,5 +114,52 @@ describe('arbre', () => {
   it('chemin et sous-arbre', () => {
     expect(pathTo(index, 'st').map((n) => n.id)).toEqual(['p', 's', 't', 'st']);
     expect(subtreeIds(nodes, 's').sort()).toEqual(['s', 'st', 't']);
+  });
+});
+
+describe('progressMap', () => {
+  const nodes = [
+    node('p', null),
+    node('sp1', 'p', { weight: 70 }),
+    node('sp2', 'p', { weight: 30 }),
+    node('t1', 'sp1'),
+    node('t2', 'sp1'),
+    node('st1', 't1', { progress: 100 }),
+    node('st2', 't1'),
+    node('t2b', 't2', { progress: 100 }),
+    node('t3', 'sp2', { progress: 40 }),
+  ];
+
+  it('donne la même progression que progressOf pour chaque nœud', () => {
+    const all = progressMap(nodes);
+    expect(all.size).toBe(nodes.length);
+    for (const n of nodes) expect(all.get(n.id)).toBeCloseTo(progressOf(nodes, n.id));
+  });
+
+  it('ne dépend pas de l\'ordre du tableau (enfants avant parents)', () => {
+    const all = progressMap([...nodes].reverse());
+    expect(all.get('p')).toBeCloseTo(0.7 * 0.75 + 0.3 * 0.4);
+  });
+
+  it('reste entre 0 et 1 même avec un avancement hors bornes', () => {
+    const all = progressMap([node('a', null, { progress: 250 }), node('b', null, { progress: -5 })]);
+    expect(all.get('a')).toBe(1);
+    expect(all.get('b')).toBe(0);
+  });
+
+  it('isDone accepte l\'arrondi flottant', () => {
+    expect(isDone(1)).toBe(true);
+    expect(isDone(0.9999999999999)).toBe(true);
+    expect(isDone(0.99)).toBe(false);
+  });
+});
+
+describe('groupByParent', () => {
+  it('regroupe et trie les enfants par position, comme childrenOf', () => {
+    const nodes = [node('p', null), node('b', 'p', { position: 2 }), node('a', 'p', { position: 1 }), node('q', null)];
+    const groups = groupByParent(nodes);
+    expect(groups.get('p')?.map((n) => n.id)).toEqual(childrenOf(nodes, 'p').map((n) => n.id));
+    expect(groups.get(null)?.map((n) => n.id)).toEqual(['p', 'q']);
+    expect(groups.get('a')).toBeUndefined();
   });
 });

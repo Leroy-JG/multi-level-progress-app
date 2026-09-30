@@ -7,6 +7,7 @@ import { formatDate, t } from '../i18n';
 import { remindersSupported } from '../notifications';
 import type { WeightUpdate } from '../store/store';
 import { Button, Field, IconButton, Sheet, Text, TextInput } from './components';
+import { KeyboardScrollView } from './keyboard';
 import { MonthGrid } from './MonthGrid';
 import { DEFAULT_PROJECT_COLOR, PROJECT_COLORS, useTheme } from './theme';
 
@@ -83,35 +84,37 @@ export function EditSheet({
       title={mode === 'create' ? t('edit.create', { name }) : t('edit.modify', { name })}
       onClose={onClose}
     >
-      <Field
-        label={t('field.name')}
-        value={title}
-        onChangeText={setTitle}
-        autoFocus
-        placeholder={t('field.namePlaceholder', { name })}
-        returnKeyType="done"
-        onSubmitEditing={submit}
-        maxLength={80}
-      />
-      {isProject ? <ColorPicker value={color} onChange={setColor} /> : null}
-      <Button
-        title={mode === 'create' ? t('common.create') : t('common.save')}
-        color={isProject ? color : undefined}
-        onPress={submit}
-        disabled={!valid}
-      />
-      {mode === 'edit' && onDelete ? (
-        <View style={{ marginTop: 10 }}>
-          {confirmDelete ? (
-            <>
-              <Text style={{ color: theme.error, marginBottom: 8, textAlign: 'center' }}>{t('edit.deleteWarning')}</Text>
-              <Button title={t('edit.deleteConfirm')} variant="danger" onPress={onDelete} />
-            </>
-          ) : (
-            <Button title={t('common.delete')} variant="danger" onPress={() => setConfirmDelete(true)} />
-          )}
-        </View>
-      ) : null}
+      <KeyboardScrollView style={{ flexGrow: 0 }}>
+        <Field
+          label={t('field.name')}
+          value={title}
+          onChangeText={setTitle}
+          autoFocus
+          placeholder={t('field.namePlaceholder', { name })}
+          returnKeyType="done"
+          onSubmitEditing={submit}
+          maxLength={80}
+        />
+        {isProject ? <ColorPicker value={color} onChange={setColor} /> : null}
+        <Button
+          title={mode === 'create' ? t('common.create') : t('common.save')}
+          color={isProject ? color : undefined}
+          onPress={submit}
+          disabled={!valid}
+        />
+        {mode === 'edit' && onDelete ? (
+          <View style={{ marginTop: 10 }}>
+            {confirmDelete ? (
+              <>
+                <Text style={{ color: theme.error, marginBottom: 8, textAlign: 'center' }}>{t('edit.deleteWarning')}</Text>
+                <Button title={t('edit.deleteConfirm')} variant="danger" onPress={onDelete} />
+              </>
+            ) : (
+              <Button title={t('common.delete')} variant="danger" onPress={() => setConfirmDelete(true)} />
+            )}
+          </View>
+        ) : null}
+      </KeyboardScrollView>
     </Sheet>
   );
 }
@@ -197,7 +200,7 @@ export function WeightsSheet({
   return (
     <Sheet visible={visible} title={t('weights.title')} onClose={onClose}>
       <Text style={{ color: theme.muted, marginBottom: 12, fontSize: 13, lineHeight: 19 }}>{t('weights.help')}</Text>
-      <ScrollView style={{ flexGrow: 0 }}>
+      <KeyboardScrollView style={{ flexGrow: 0 }}>
         {draft.map((d) => {
           const eff = effectivePercent(draft, d.id);
           return (
@@ -227,7 +230,7 @@ export function WeightsSheet({
             </View>
           );
         })}
-      </ScrollView>
+      </KeyboardScrollView>
       <Text style={{ color: summary.overflow ? theme.error : theme.muted, marginVertical: 8, fontSize: 13 }} accessibilityLiveRegion="polite">
         {summary.overflow
           ? t('weights.overflow', { total: Math.round(summary.fixedTotal * 10) / 10 })

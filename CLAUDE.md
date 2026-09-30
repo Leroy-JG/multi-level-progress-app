@@ -39,6 +39,15 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
 - À 100 % : effet visuel (couleur `success`, coche).
 - **Réordonner** les éléments : oui. **Déplacer** d'un parent à un autre : non.
 
+### v2 : accordéons et clavier (validé par l'utilisateur)
+- **Accordéons** dans la liste de chaque écran (projet, sous-projet, tâche) : chaque élément qui a des enfants a une
+  flèche (▸/▾) à gauche ; en appuyant dessus on déploie son contenu sur place, à tous les niveaux
+  (sous-projet → tâches → sous-tâches). Repliés par défaut ; l'état déplié est gardé pour la session (pas enregistré).
+- Chaque ligne, à tous les niveaux : **case à cocher, nom, barre et pourcentage**. Appuyer sur le corps de la ligne
+  (ou la chevron ›) ouvre l'écran de l'élément comme avant. Cocher un parent garde la confirmation « tout terminer ».
+- Mode « Réordonner » : seuls les éléments du premier niveau sont affichés (accordéons repliés), avec leurs flèches.
+- **Clavier** : le champ en cours de saisie doit toujours rester visible au-dessus du clavier (écrans et feuilles).
+
 ### Dates, notes, rappels, calendrier
 - Notes libres sur chaque élément.
 - Date limite (optionnelle) et rappel (optionnel) sur chaque élément.
@@ -78,7 +87,9 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
 - [x] Calendrier (par projet), statistiques (par projet), réglages, export/import JSON (validation stricte)
 - [x] i18n : `src/i18n` (fr) prêt pour d'autres langues (ajouter `en.ts` + `LANGUAGES`)
 - [x] 27 tests unitaires ; parcours complet testé dans Chromium (16 vérifications)
-- [ ] **Non testé sur téléphone** (SQLite natif jamais exécuté ici) → Expo Go
+- [x] **v2** (2.0.0, `versionCode` 2) : accordéons récursifs + clavier qui ne masque plus les champs (voir ci-dessous)
+- [ ] **Non testé sur téléphone** (SQLite natif jamais exécuté ici) → Expo Go. Idem pour le **clavier Android** de la v2 :
+      la logique est testée dans Chromium (fenêtre réduite pour simuler le clavier) mais pas avec un vrai clavier Android
 - [x] Rappels : notifications locales via `expo-notifications` (`src/notifications`), **code jamais exécuté sur un vrai
       téléphone** ; sur web/PWA les rappels sont enregistrés mais ne sonnent pas (l'UI le dit)
 - [x] Icône « A » (Raleway ExtraBold doré + barre de progression, sur `#26428B`), nom « Alam », splash
@@ -96,6 +107,15 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
   inchangés ; le store (`src/store/store.tsx`) s'en sert pour ne sauvegarder que les différences, et appelle
   toujours `syncCompletion` (dates de complétion).
 - `src/storage/persistence.ts` (SQLite) / `persistence.web.ts` (localStorage) : même interface `Persistence`.
+- `src/domain/progress.ts` : `progressMap` calcule la progression de tout l'arbre en une passe (utilisé par les lignes
+  d'accordéon) ; `tree.ts` : `groupByParent` (enfants triés de chaque parent en une passe).
+- Accordéons : `src/ui/NodeTree.tsx` (`TreeBranch`, récursif, reçoit un `TreeContext` de l'écran) ;
+  `src/ui/expansion.ts` (ensemble des accordéons ouverts, en mémoire, `useSyncExternalStore`).
+- Clavier : `src/ui/keyboard.tsx` — `useKeyboardInset()` (hauteur occupée par le clavier ; Android : + barre de
+  navigation) et `KeyboardScrollView` (fait défiler pour garder le champ actif visible, via `TextInput` de
+  `components.tsx` qui prévient la zone défilante au focus). Le calcul pur est dans `src/ui/reveal.ts`.
+- Feuilles (`Sheet` dans `components.tsx`) : **plus de `Modal` natif**. Elles sont affichées par `<SheetProvider>`
+  (`src/ui/SheetHost.tsx`, dans `app/_layout.tsx`) dans la fenêtre principale, par-dessus la navigation.
 - Écrans : `app/index.tsx` (projet), `calendar`, `stats`, `settings`, `node/[id]`. Barre du bas maison
   (`BottomBar`), pas expo-router Tabs (en cours de dépréciation dans Expo 57).
 - Web : la pile de navigation garde les écrans précédents dans le DOM → dans les tests Playwright, utiliser `.last()`.
@@ -109,7 +129,41 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
 - Ne pas utiliser `pkill -f` avec un motif présent dans la commande elle-même (tue le shell). Arrêter un serveur de test : `fuser -k PORT/tcp`.
 - Lancer sur téléphone : `npm install && npm start`, scanner le QR code avec Expo Go.
 
+- **Pourquoi pas de `Modal` ni de `KeyboardAvoidingView`** : Expo 57 impose l'edge-to-edge sur Android (la fenêtre ne se
+  redimensionne jamais pour le clavier) et un `Modal` RN est une fenêtre séparée qui ne reçoit pas les événements
+  `keyboardDidShow` (c'est la fenêtre principale qui les émet) → une feuille avec un champ ne pouvait pas remonter.
+  Solution : feuilles dans la fenêtre principale + `paddingBottom = hauteur du clavier` sur l'écran/la feuille.
+  Sur l'écran, la barre du bas est masquée pendant la saisie. Ne pas réintroduire `Modal` pour une feuille avec champ.
+- Test du clavier sur web : réduire la hauteur de la fenêtre (Playwright `setViewportSize`) pendant qu'un champ a le
+  focus ; sans `KeyboardScrollView` le champ reste sous la ligne du « clavier » (vérifié). La PWA ajoute
+  `interactive-widget=resizes-content` au viewport pour que la page se raccourcisse aussi sur Android Chrome.
+- Web : le rôle `dialog` est sur la feuille ; dans Playwright, le fond et la croix ont tous deux le libellé « Fermer »
+  (le fond est recouvert par la feuille : utiliser `.last()` pour la croix).
+- APK : signé avec la clé de debug du modèle Expo (identique d'un build à l'autre) → la v2 s'installe par-dessus la v1
+  sans perdre les données. Bonne pratique quand même : exporter une sauvegarde avant de mettre à jour.
+
+## Sécurité (audit du 2026-09-29)
+- Vérifié : aucun secret ni clé dans le dépôt ; SQL 100 % paramétré ; pas d'`eval`/`innerHTML`/WebView/lien externe ;
+  seule permission Android = notifications ; le service worker ne touche que les GET de même origine ;
+  l'import JSON est validé strictement (structure, profondeur, doublons, couleur `#RRGGBB`, ≤ 20 000 éléments).
+- `npm audit --omit=dev` : 0 haute/critique, 14 modérées, toutes dans l'outillage de build Expo (`uuid`,
+  `decode-uri-component`) — non livrées dans l'app ; ne pas faire `audit fix --force` (casse Expo).
+- Limite connue : l'APK est signé avec la clé de debug **publique** du modèle Expo (pratique pour s'auto-installer, mais
+  n'importe qui peut produire un APK qui remplace le vôtre). Si l'app est un jour diffusée : clé perso dans les secrets GitHub.
+- Signature personnelle : `scripts/sign-release.py` + étape du workflow ; active si les 4 secrets GitHub
+  `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` existent. La clé
+  privée doit être générée sur la machine de l'utilisateur (jamais dans une session Claude ni dans le dépôt).
+  Changer de clé = l'APK ne s'installe plus par-dessus l'ancien (désinstaller après export d'une sauvegarde).
+- Durcissement appliqué : CSP stricte dans `public/index.html` (pas de script ni ressource externe, scripts en ligne
+  interdits → l'enregistrement du service worker est dans `public/register-sw.js`), `referrer no-referrer`,
+  workflows en lecture seule (écriture uniquement pour le job `release`),
+  `persist-credentials: false`, `.github/dependabot.yml` (npm + actions), `SECURITY.md`.
+  Si un jour on charge une ressource externe (police, API), il faut d'abord l'autoriser dans la CSP.
+- Données non chiffrées sur l'appareil (localStorage / SQLite) ; sauvegarde automatique Android laissée activée (choix de l'utilisateur : pratique pour changer de téléphone ; à
+  réévaluer si l'app est diffusée — mettre `android.allowBackup: false` pour garder les données hors du cloud Google).
+
 ## Conventions
-- Développement sur la branche `claude/create-application-dodfio`.
+- Développement sur la branche désignée par la session (v1 : `claude/create-application-dodfio`, mergée dans `main` ;
+  v2 : `claude/serene-mendel-6n23bn`). Pas de PR sans demande explicite de l'utilisateur.
 - Ne jamais commiter `node_modules/` ni `dist/`.
 - Commandes : `npm start`, `npm test`, `npm run typecheck`.
