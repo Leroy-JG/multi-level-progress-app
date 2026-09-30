@@ -86,8 +86,9 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
 - [x] Cocher partout (parent = confirmation « tout terminer »), réordonner (flèches), répartition %
 - [x] Calendrier (par projet), statistiques (par projet), réglages, export/import JSON (validation stricte)
 - [x] i18n : `src/i18n` (fr) prêt pour d'autres langues (ajouter `en.ts` + `LANGUAGES`)
-- [x] 27 tests unitaires ; parcours complet testé dans Chromium (16 vérifications)
+- [x] 42 tests unitaires ; parcours complet testé dans Chromium (16 vérifications)
 - [x] **v2** (2.0.0, `versionCode` 2) : accordéons récursifs + clavier qui ne masque plus les champs (voir ci-dessous)
+- [x] **2.0.1** (`versionCode` 3) : nouvelle icône (arbre de barres de progression), aucun changement fonctionnel
 - [ ] **Non testé sur téléphone** (SQLite natif jamais exécuté ici) → Expo Go. Idem pour le **clavier Android** de la v2 :
       la logique est testée dans Chromium (fenêtre réduite pour simuler le clavier) mais pas avec un vrai clavier Android
 - [x] Rappels : notifications locales via `expo-notifications` (`src/notifications`), **code jamais exécuté sur un vrai
@@ -95,12 +96,13 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
 - [x] Icône = **arbre de barres de progression** (3 étages : 1 barre → 2 → 4, reliées par des connecteurs ; remplissage
       doré `#C9A227`, piste crème `#F4EBD9` translucide, sur `#26428B`) : la barre d'un parent est la moyenne de ses
       enfants, comme dans l'app. Remplace l'ancien « A » puis une barre seule dans un cadre (écartée). Favicon 48 px = version
-      à 2 étages (plus lisible). Nom « Alam », splash
+      à 2 étages (plus lisible). Nom « Alam », splash. Générée par `scripts/make-icons.mjs`
 - [x] PWA : `public/` (manifest, sw.js qui précache page + JS, icônes), testée hors ligne et sous sous-chemin GitHub Pages
 - [x] Workflows : `.github/workflows/pages.yml` (site, sur push `main`) et `android-apk.yml` (APK, à la main ou tag `v*`)
       — **jamais exécutés** (ne peuvent pas l'être depuis ici)
-- [ ] À faire par l'utilisateur : fusionner la branche dans `main`, activer Pages (Réglages → Pages → Source :
-      GitHub Actions), lancer « APK Android » pour obtenir `Alam.apk`
+- [x] Branche fusionnée dans `main` ; le workflow « APK Android » a été lancé sur `main` (artefact `Alam-apk`)
+- [ ] À faire par l'utilisateur : activer Pages si ce n'est pas fait (Réglages → Pages → Source : GitHub Actions) ;
+      télécharger l'artefact : Actions → « APK Android » → dernier run réussi → `Alam-apk` (zip contenant `Alam.apk`)
 - [ ] Test réel sur téléphone (Android via APK/Expo Go, iPhone via la PWA « Ajouter à l'écran d'accueil »)
 - [ ] Idées : glisser-déposer pour réordonner, langue anglaise (`src/i18n/en.ts`), sauvegarde plus robuste sur iPhone
       (Safari peut vider le stockage d'un site non installé après ~7 jours sans visite)
@@ -130,7 +132,8 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
   splash) ; pas de Pillow dans l'environnement. 8 fichiers à régénérer ensemble : `assets/{icon,adaptive-icon,
   splash-icon,favicon}.png` et `public/{icon-192,icon-512,icon-maskable-512,apple-touch-icon}.png`. Zones de
   sécurité (mesurées sur le pixel le plus éloigné du centre) : adaptive Android = cercle de 66 % (motif à 78 %),
-  maskable PWA = cercle de 80 % (motif à 95 %). Le script de génération n'est pas dans le dépôt.
+  maskable PWA = cercle de 80 % (motif à 95 %). Script : `node scripts/make-icons.mjs` (reproductible : relancé sans
+  changement, il ne modifie aucun PNG) ; il faut le paquet `playwright` (déjà présent dans l'environnement cloud).
   Changer une icône PWA ⇒ incrémenter `CACHE` dans `public/sw.js` (les icônes sont servies depuis le cache).
 - Test web : `CI=1 npx expo export --platform web --output-dir dist`, servir `dist/` (ignoré par git), piloter avec
   Playwright (`/opt/node22/lib/node_modules/playwright`, `executablePath: '/opt/pw-browsers/chromium'`, `--no-sandbox`).
@@ -174,4 +177,7 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
 - Développement sur la branche désignée par la session (v1 : `claude/create-application-dodfio`, mergée dans `main` ;
   v2 : `claude/serene-mendel-6n23bn`). Pas de PR sans demande explicite de l'utilisateur.
 - Ne jamais commiter `node_modules/` ni `dist/`.
+- Livrer un nouvel APK : incrémenter `version` (`app.json` + `package.json`/lock via `npm version X.Y.Z --no-git-tag-version`)
+  ET `android.versionCode` (sinon Android peut refuser de remplacer l'ancien), fusionner dans `main`, puis lancer
+  « APK Android » sur `main`. Changement d'icône ⇒ aussi `CACHE` de `public/sw.js`.
 - Commandes : `npm start`, `npm test`, `npm run typecheck`.
