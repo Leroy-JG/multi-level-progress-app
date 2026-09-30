@@ -150,6 +150,10 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
   `decode-uri-component`) — non livrées dans l'app ; ne pas faire `audit fix --force` (casse Expo).
 - Limite connue : l'APK est signé avec la clé de debug **publique** du modèle Expo (pratique pour s'auto-installer, mais
   n'importe qui peut produire un APK qui remplace le vôtre). Si l'app est un jour diffusée : clé perso dans les secrets GitHub.
+- Signature personnelle : `scripts/sign-release.py` + étape du workflow ; active si les 4 secrets GitHub
+  `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` existent. La clé
+  privée doit être générée sur la machine de l'utilisateur (jamais dans une session Claude ni dans le dépôt).
+  Changer de clé = l'APK ne s'installe plus par-dessus l'ancien (désinstaller après export d'une sauvegarde).
 - Durcissement appliqué : CSP stricte dans `public/index.html` (pas de script ni ressource externe, scripts en ligne
   interdits → l'enregistrement du service worker est dans `public/register-sw.js`), `referrer no-referrer`,
   `android.allowBackup: false`, workflows en lecture seule (écriture uniquement pour le job `release`),
