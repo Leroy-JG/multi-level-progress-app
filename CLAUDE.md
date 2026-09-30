@@ -92,9 +92,10 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
       la logique est testée dans Chromium (fenêtre réduite pour simuler le clavier) mais pas avec un vrai clavier Android
 - [x] Rappels : notifications locales via `expo-notifications` (`src/notifications`), **code jamais exécuté sur un vrai
       téléphone** ; sur web/PWA les rappels sont enregistrés mais ne sonnent pas (l'UI le dit)
-- [x] Icône = **barre de progression** (cadre crème `#F4EBD9` + remplissage doré `#C9A227` à 68 %, sur `#26428B`) —
-      remplace l'ancien « A » (les variantes « 3 barres empilées » et « pilule seule » ont été écartées : elles font
-      penser à un menu hamburger / un interrupteur). Nom « Alam », splash
+- [x] Icône = **arbre de barres de progression** (3 étages : 1 barre → 2 → 4, reliées par des connecteurs ; remplissage
+      doré `#C9A227`, piste crème `#F4EBD9` translucide, sur `#26428B`) : la barre d'un parent est la moyenne de ses
+      enfants, comme dans l'app. Remplace l'ancien « A » puis une barre seule dans un cadre (écartée). Favicon 48 px = version
+      à 2 étages (plus lisible). Nom « Alam », splash
 - [x] PWA : `public/` (manifest, sw.js qui précache page + JS, icônes), testée hors ligne et sous sous-chemin GitHub Pages
 - [x] Workflows : `.github/workflows/pages.yml` (site, sur push `main`) et `android-apk.yml` (APK, à la main ou tag `v*`)
       — **jamais exécutés** (ne peuvent pas l'être depuis ici)
@@ -128,7 +129,8 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
 - Icônes : générées avec Playwright (SVG rendu dans Chromium, capture PNG, `omitBackground` pour l'adaptive et le
   splash) ; pas de Pillow dans l'environnement. 8 fichiers à régénérer ensemble : `assets/{icon,adaptive-icon,
   splash-icon,favicon}.png` et `public/{icon-192,icon-512,icon-maskable-512,apple-touch-icon}.png`. Zones de
-  sécurité : adaptive Android = cercle de 66 % (motif réduit à 80 %), maskable PWA = cercle de 80 %.
+  sécurité (mesurées sur le pixel le plus éloigné du centre) : adaptive Android = cercle de 66 % (motif à 78 %),
+  maskable PWA = cercle de 80 % (motif à 95 %). Le script de génération n'est pas dans le dépôt.
   Changer une icône PWA ⇒ incrémenter `CACHE` dans `public/sw.js` (les icônes sont servies depuis le cache).
 - Test web : `CI=1 npx expo export --platform web --output-dir dist`, servir `dist/` (ignoré par git), piloter avec
   Playwright (`/opt/node22/lib/node_modules/playwright`, `executablePath: '/opt/pw-browsers/chromium'`, `--no-sandbox`).
