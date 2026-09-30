@@ -66,4 +66,14 @@ export const persistence: Persistence = {
   async saveSettings(settings) {
     write({ ...read(), settings });
   },
+  async eraseAll() {
+    // Les deux clés : l'ancienne (v1) ne doit pas survivre à un effacement.
+    for (const key of [KEY, LEGACY_KEY]) {
+      try {
+        globalThis.localStorage?.removeItem(key);
+      } catch (e) {
+        console.warn('Stockage indisponible', e);
+      }
+    }
+  },
 };

@@ -15,4 +15,6 @@ export interface Persistence {
   replaceAll(nodes: ProgressNode[], currentProjectId: string | null): Promise<void>;
   saveCurrentProject(id: string | null): Promise<void>;
   saveSettings(settings: Settings): Promise<void>;
+  /** Efface tout (projets, réglages) de l'appareil, sans laisser de trace récupérable dans le fichier de la base. */
+  eraseAll(): Promise<void>;
 }

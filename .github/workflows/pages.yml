@@ -35,6 +35,8 @@ jobs:
         env:
           CI: '1'
           EXPO_BASE_URL: /${{ github.event.repository.name }}
+      # La page publiée ne doit pouvoir ouvrir aucune connexion (les données restent sur l'appareil).
+      - run: grep -q "connect-src 'none'" dist/index.html
       # GitHub Pages n'a pas de « repli SPA » : 404.html = index.html pour que les liens directs fonctionnent.
       - run: cp dist/index.html dist/404.html
       - uses: actions/upload-pages-artifact@v3

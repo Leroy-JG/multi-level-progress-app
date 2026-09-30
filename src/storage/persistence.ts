@@ -133,4 +133,15 @@ export const persistence: Persistence = {
   async saveSettings(settings) {
     await setMeta(await getDb(), 'settings', JSON.stringify(settings));
   },
+
+  async eraseAll() {
+    const db = await getDb();
+    await db.withTransactionAsync(async () => {
+      await db.runAsync('DELETE FROM nodes');
+      await db.runAsync('DELETE FROM meta');
+    });
+    // Réécrit le fichier : les anciennes données ne restent ni dans les pages libres ni dans le journal (WAL).
+    await db.execAsync('VACUUM');
+    await db.execAsync('PRAGMA wal_checkpoint(TRUNCATE)');
+  },
 };

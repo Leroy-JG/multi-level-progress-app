@@ -29,8 +29,12 @@ interface StoreValue {
   moveSibling(id: NodeId, direction: -1 | 1): void;
   selectProject(id: NodeId): void;
   setThemeMode(mode: ThemeMode): void;
+  /** Note qu'une sauvegarde vient d'être exportée (date affichée dans les réglages). */
+  markBackedUp(at: number): void;
   /** Remplace toutes les données (import). */
   replaceAll(nodes: ProgressNode[]): void;
+  /** Efface définitivement projets et réglages de l'appareil (aucune copie n'existe ailleurs). */
+  eraseAll(): void;
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
@@ -177,6 +181,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         enqueue(() => persistence.saveSettings(next));
       },
 
+      markBackedUp(at) {
+        const next = { ...settings, lastBackupAt: at };
+        setSettingsState(next);
+        enqueue(() => persistence.saveSettings(next));
+      },
+
       replaceAll(imported) {
         const synced = syncCompletion(imported, Date.now());
         const roots = synced.filter((n) => n.parentId === null).sort(byPosition);
@@ -187,6 +197,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setCurrentState(current);
         enqueue(() => persistence.replaceAll(synced, current));
         void syncReminders(synced);
+      },
+
+      eraseAll() {
+        nodesRef.current = [];
+        setNodesState([]);
+        currentRef.current = null;
+        setCurrentState(null);
+        setSettingsState(DEFAULT_SETTINGS);
+        enqueue(() => persistence.eraseAll());
+        void syncReminders([]); // annule tous les rappels programmés
       },
     }),
     [ready, nodes, currentProjectId, settings, mutate, setCurrent, enqueue],

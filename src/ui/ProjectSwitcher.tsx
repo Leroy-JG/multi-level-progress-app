@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -98,6 +99,7 @@ export function NoProjectView() {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const store = useStore();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, paddingTop: insets.top + 32, backgroundColor: theme.bg }}>
@@ -105,6 +107,8 @@ export function NoProjectView() {
       <Text style={{ fontSize: 24, fontWeight: '800', marginVertical: 10 }}>{t('welcome.title')}</Text>
       <Text style={{ color: theme.muted, textAlign: 'center', marginBottom: 22, lineHeight: 21 }}>{t('welcome.text')}</Text>
       <Button title={t('welcome.create')} onPress={() => setOpen(true)} />
+      {/* Nouvel appareil, réinstallation, stockage vidé : la sauvegarde est la seule copie, on la restaure d'ici. */}
+      <Button title={t('welcome.restore')} variant="ghost" style={{ marginTop: 12 }} onPress={() => router.replace('/settings')} />
       <EditSheet
         visible={open}
         mode="create"

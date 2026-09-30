@@ -23,6 +23,7 @@ export const fr = {
   'welcome.text':
     'Créez votre premier projet, puis découpez-le en sous-projets, tâches et sous-tâches pour suivre précisément votre avancement.',
   'welcome.create': 'Créer un projet',
+  'welcome.restore': 'Restaurer une sauvegarde',
 
   'picker.title': 'Mes projets',
   'picker.open': 'ouvert',
@@ -114,7 +115,7 @@ export const fr = {
   'settings.language': 'Langue',
   'settings.data': 'Vos données',
   'settings.dataHelp':
-    "Tout est stocké uniquement sur cet appareil. Exportez régulièrement une sauvegarde pour ne rien perdre si vous changez d'appareil.",
+    "Sans compte ni serveur, une sauvegarde est la seule copie de vos données hors de cet appareil. Exportez-en une régulièrement et gardez le fichier où vous voulez (il n'est pas chiffré).",
   'settings.export': 'Exporter une sauvegarde',
   'settings.exported': 'Sauvegarde exportée.',
   'settings.exportFailed': "L'export a échoué.",
@@ -127,7 +128,33 @@ export const fr = {
     'Cette sauvegarde contient {projects} projet(s) et {elements} élément(s). Elle remplacera toutes les données actuelles.',
   'settings.importConfirm': 'Remplacer',
   'settings.imported': 'Sauvegarde importée.',
+  'settings.erase': 'Effacer toutes mes données',
+  'settings.eraseHelp': "Supprime tous vos projets et réglages de cet appareil. Il n'y a aucune copie ailleurs.",
+  'settings.eraseTitle': 'Tout effacer ?',
+  'settings.eraseText':
+    "Tous vos projets et réglages seront supprimés définitivement de cet appareil. Il n'en existe aucune copie ailleurs : sans sauvegarde exportée, vous ne pourrez pas les récupérer.",
+  'settings.eraseConfirm': 'Tout effacer définitivement',
+  'settings.erased': 'Toutes les données ont été effacées.',
   'settings.about': 'Alam · données stockées sur votre appareil',
+
+  'privacy.headline': "Vos données n'existent que sur cet appareil.",
+  'privacy.noNetwork':
+    "Alam n'a ni compte, ni serveur, ni statistiques d'usage : l'application n'envoie rien sur Internet. Seuls les fichiers de sauvegarde que vous exportez vous-même en sortent.",
+  'privacy.whereApp':
+    "Elles sont rangées dans l'espace privé de l'application, inaccessible aux autres applications, et disparaîtront si vous désinstallez Alam.",
+  'privacy.whereWeb':
+    'Elles sont rangées dans le stockage de ce navigateur et disparaîtront si vous effacez les données du site.',
+  'privacy.noCopy': "Personne n'en garde de copie : vous seul pouvez les sauvegarder, sous la forme d'un fichier que vous conservez où vous voulez.",
+  'privacy.persistent': 'Stockage protégé : le navigateur ne le videra pas de lui-même.',
+  'privacy.bestEffort':
+    "Stockage non protégé : le navigateur peut le vider s'il manque de place, ou après une longue absence (iPhone). Ajoutez Alam à l'écran d'accueil et exportez des sauvegardes.",
+  'privacy.unsupported': 'Ce navigateur ne permet pas de protéger le stockage : exportez des sauvegardes régulièrement.',
+  'privacy.protect': 'Protéger le stockage',
+  'privacy.protectDenied': "Le navigateur n'a pas accordé la protection. Ajoutez Alam à l'écran d'accueil, puis réessayez.",
+
+  'backup.never': "Aucune sauvegarde exportée pour l'instant.",
+  'backup.last': 'Dernière sauvegarde : {date}.',
+  'backup.old': 'Dernière sauvegarde : {date} (il y a {days} jours).',
 
   'import.invalid_json': "Ce n'est pas un fichier JSON valide.",
   'import.invalid_format': "Ce fichier n'est pas une sauvegarde de cette application.",

@@ -1,7 +1,7 @@
 // Version web / PWA : téléchargement d'un fichier et sélecteur de fichier.
 export const canPickFile = true;
 
-export async function shareText(filename: string, content: string): Promise<void> {
+export async function shareText(filename: string, content: string): Promise<boolean> {
   const blob = new Blob([content], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -11,6 +11,7 @@ export async function shareText(filename: string, content: string): Promise<void
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return true;
 }
 
 export function pickTextFile(): Promise<string | null> {
