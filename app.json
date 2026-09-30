@@ -2,7 +2,7 @@
   "expo": {
     "name": "Alam",
     "slug": "multi-level-progress-app",
-    "version": "2.0.1",
+    "version": "2.2.0",
     "orientation": "portrait",
     "scheme": "wprogress",
     "userInterfaceStyle": "automatic",
@@ -23,9 +23,16 @@
     ],
     "android": {
       "package": "com.alam.app",
-      "versionCode": 3,
+      "versionCode": 5,
       "adaptiveIcon": { "foregroundImage": "./assets/adaptive-icon.png", "backgroundColor": "#26428B" },
-      "permissions": ["POST_NOTIFICATIONS"]
+      "permissions": ["POST_NOTIFICATIONS"],
+      "allowBackup": false,
+      "blockedPermissions": [
+        "android.permission.INTERNET",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "ios": { "bundleIdentifier": "com.alam.app", "supportsTablet": true },
     "web": { "bundler": "metro", "output": "single", "favicon": "./assets/favicon.png", "name": "Alam", "shortName": "Alam", "lang": "fr" }

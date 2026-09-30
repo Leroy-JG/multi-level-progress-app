@@ -377,7 +377,8 @@ const TABS: { key: TabKey; path: '/' | '/calendar' | '/stats' | '/settings'; ico
   { key: 'settings', path: '/settings', icon: 'settings-outline', label: 'tab.settings' },
 ];
 
-export function BottomBar({ active }: { active: TabKey }) {
+/** `onActivePress` : appui sur l'onglet déjà actif (utile sur un sous-écran d'un onglet, pour revenir à l'onglet). */
+export function BottomBar({ active, onActivePress }: { active: TabKey; onActivePress?: () => void }) {
   const theme = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -388,7 +389,7 @@ export function BottomBar({ active }: { active: TabKey }) {
         return (
           <Pressable
             key={tab.key}
-            onPress={() => !selected && router.replace(tab.path)}
+            onPress={() => (selected ? onActivePress?.() : router.replace(tab.path))}
             accessibilityRole="tab"
             accessibilityState={{ selected }}
             accessibilityLabel={t(tab.label)}

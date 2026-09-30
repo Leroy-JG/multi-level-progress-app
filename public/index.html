@@ -3,8 +3,11 @@
   <head>
     <meta charset="utf-8" />
     <!-- Politique de sécurité : uniquement du contenu de ce site (pas de script ni de ressource externe, pas de plugin,
-         pas d'envoi de formulaire). Les styles en ligne sont requis par React Native Web. -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'" />
+         pas d'envoi de formulaire). Les styles en ligne sont requis par React Native Web.
+         connect-src 'none' : la page ne peut ouvrir AUCUNE connexion (fetch, XHR, WebSocket, beacon…). C'est ce qui
+         garantit que les données de l'utilisateur ne quittent pas l'appareil (voir PRIVACY.md et src/privacy.test.ts).
+         Le service worker, lui, ne charge que les fichiers de l'application (sw.js), jamais de données. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'none'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'" />
     <meta name="referrer" content="no-referrer" />
     <!-- interactive-widget : sur Android, la page se raccourcit quand le clavier s'ouvre (le champ actif reste visible). -->
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />

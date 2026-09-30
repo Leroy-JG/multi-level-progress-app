@@ -13,9 +13,10 @@ export interface ExportFile {
   nodes: ProgressNode[];
 }
 
-export function exportData(nodes: readonly ProgressNode[], now: number): string {
+/** `compact` : sans mise en forme (environ 40 % plus léger) — pour les copies automatiques gardées sur l'appareil. */
+export function exportData(nodes: readonly ProgressNode[], now: number, compact = false): string {
   const file: ExportFile = { app: EXPORT_APP, version: EXPORT_VERSION, exportedAt: now, nodes: [...nodes] };
-  return JSON.stringify(file, null, 2);
+  return compact ? JSON.stringify(file) : JSON.stringify(file, null, 2);
 }
 
 export class ImportError extends Error {}

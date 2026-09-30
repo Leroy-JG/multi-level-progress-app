@@ -6,6 +6,7 @@ Ce fichier est lu automatiquement par Claude Code à chaque session. Il sert de 
 ## But
 App mobile de suivi de progression de projets multi-niveaux. Nom affiché : **« Alam »** (renommé depuis « W »). Identifiants internes gardés tels quels : clé localStorage `w:data:v2`, format d’export `w-progress` (compatibilité des données).
 Public : tout le monde, usage **solo, hors ligne, sans compte**. Android + iPhone.
+**Principe directeur (décidé le 2026-09-30) : les données n'existent QUE sur l'appareil de l'utilisateur** — il en est le seul propriétaire, personne d'autre (développeur, GitHub, Google) n'en a de copie. Voir la section « Données uniquement locales » et `PRIVACY.md`.
 Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais **uniquement le suivi de projet**
 (pas de chronomètre / suivi du temps).
 
@@ -48,6 +49,47 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
 - Mode « Réordonner » : seuls les éléments du premier niveau sont affichés (accordéons repliés), avec leurs flèches.
 - **Clavier** : le champ en cours de saisie doit toujours rester visible au-dessus du clavier (écrans et feuilles).
 
+### Données uniquement locales (validé par l'utilisateur, 2026-09-30, v2.1.0)
+- **Verrous techniques** : APK = permission `INTERNET` retirée (`android.blockedPermissions`, avec `SYSTEM_ALERT_WINDOW` et
+  `READ/WRITE_EXTERNAL_STORAGE` inutiles) + `android.allowBackup: false` (ni cloud Google ni transfert : **remplace** l'ancien
+  choix « sauvegarde automatique activée ») ; PWA = CSP `connect-src 'none'` dans `public/index.html`.
+  Note : `expo-file-system` (dépendance d'Expo) déclare INTERNET → seul `blockedPermissions` (`tools:node="remove"`) l'enlève du manifeste fusionné.
+- **Garde-fous** : `src/privacy.test.ts` (aucun appel réseau dans `src/`+`app/`, aucun paquet de télémétrie / réseau / mise à
+  jour à distance, `allowBackup=false`, INTERNET bloqué, CSP sans hôte externe, service worker même-origine) ; workflow APK :
+  contrôle du manifeste généré puis de l'APK final (`aapt2`) ; workflow Pages : `connect-src 'none'` dans `dist/index.html`.
+  **Ajouter un service réseau exige de changer explicitement ces verrous ET `PRIVACY.md`.**
+- **Propriété des données dans l'app** : carte « Vos données n'existent que sur cet appareil » (`src/ui/PrivacyCard.tsx`) ;
+  date de dernière sauvegarde (`Settings.lastBackupAt`, alerte après 30 jours, `src/domain/backup.ts`) ; « Effacer toutes mes
+  données » (`store.eraseAll` → `Persistence.eraseAll` : web = suppression des clés `w:data:v2` et `mlp:data:v1` ; Android =
+  `DELETE` + `VACUUM` + `wal_checkpoint(TRUNCATE)`, car un simple `DELETE` laisse les textes dans le fichier — vérifié) ;
+  stockage persistant web (`src/storage/durability.web.ts`, `navigator.storage.persist()` **sur geste de l'utilisateur
+  seulement** : Firefox affiche une demande) ; bouton « Restaurer une sauvegarde » sur l'écran d'accueil vide (nouvel appareil).
+- Exporter n'est comptabilisé comme sauvegarde que si l'utilisateur a réellement partagé (`shareText` renvoie `false` si la feuille de partage est fermée).
+- Non fait (idées) : export chiffré par mot de passe, verrouillage de l'app, alerte visible si l'écriture locale échoue (quota / navigation privée).
+
+### Sauvegardes automatiques facultatives (validé par l'utilisateur, 2026-09-30, v2.2.0)
+- **Réglage à part, désactivé par défaut** (`Settings.autoBackup` : `enabled`, `every` + `unit` `days|weeks` — 1 semaine par défaut,
+  bornes 1–365 j / 1–52 sem —, `keep` 5/10/20/50 (10 par défaut), `lastRunAt`). Écran `app/backups.tsx` → `src/ui/BackupsView.tsx`
+  (interrupteur, fréquence, copies conservées, « Sauvegarder maintenant », historique), atteint depuis Réglages (ligne « Sauvegardes automatiques »).
+- **Historique qui s'empile** : chaque copie s'ajoute, la précédente n'est jamais écrasée ; seules les plus anciennes, au-delà de `keep`,
+  sont supprimées (à la copie suivante). Copies **légères** : export JSON compact (`exportData(..., compact)`), liste sans le contenu,
+  copie identique à la dernière (`snapshotHash`, indépendante de l'ordre) non empilée. Types : `auto`, `manual`, `before-restore`.
+- **Quand** : à l'ouverture de l'app et à chaque retour au premier plan (`AppState`), si `isBackupDue` ; **pas de tâche de fond**
+  (l'UI le dit). Activer ⇒ première copie tout de suite si due. Le délai repart après une copie auto (même « inchangée »), jamais si rien à copier.
+- **Stockage** (jamais hors appareil, non chiffré) : Android = table SQLite `backups` (créée par `CREATE TABLE IF NOT EXISTS`, pas de
+  changement de `user_version`) ; web = **IndexedDB** `alam-backups` (pas localStorage : son quota partagé ne doit pas menacer les données).
+  `Persistence` étend `BackupBackend` (`listBackups/readBackup/addBackup/deleteBackup`). « Effacer toutes mes données » supprime aussi les copies.
+- **Restaurer** : `prepareRestore` (lit, valide avec `parseImport`, garde d'abord l'état actuel en `before-restore`) puis `replaceAll`.
+- **Limite assumée et affichée** : les copies vivent dans le même espace que les données → elles protègent d'une erreur, **pas** de la perte
+  du téléphone / désinstallation / stockage vidé (il faut exporter un fichier). Piste non faite : dossier choisi par l'utilisateur
+  (Android SAF, `expo-file-system`) pour survivre à la désinstallation.
+- **Fenêtre de proposition** (`src/ui/BackupPrompt.tsx`, montée dans `app/_layout.tsx`) : à la création du **tout premier projet**
+  (aucune racine existante) si `!backupPromptSeen` et copies non activées ; bouton « Configurer les sauvegardes » → `/backups`, ou « Fermer ».
+  `backupPromptSeen` est posé à l'affichage (ne revient jamais, sauf après « Effacer toutes mes données » qui remet les réglages à zéro).
+  Pas de fenêtre pour les utilisateurs déjà équipés en projets (mise à jour depuis ≤ 2.1.0).
+- Store : `updateSettings` (point d'entrée unique des réglages, `settingsRef`), `runSnapshot` (dans la file d'écriture, revérifie
+  `isBackupDue` pour les copies auto), `replaceAllNodes` partagé par import et restauration. Logique testable dans `src/store/snapshots.ts`.
+
 ### Dates, notes, rappels, calendrier
 - Notes libres sur chaque élément.
 - Date limite (optionnelle) et rappel (optionnel) sur chaque élément.
@@ -89,6 +131,9 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
 - [x] 42 tests unitaires ; parcours complet testé dans Chromium (16 vérifications)
 - [x] **v2** (2.0.0, `versionCode` 2) : accordéons récursifs + clavier qui ne masque plus les champs (voir ci-dessous)
 - [x] **2.0.1** (`versionCode` 3) : nouvelle icône (arbre de barres de progression), aucun changement fonctionnel
+- [x] **2.1.0** (`versionCode` 4) : données uniquement locales (voir section dédiée) — verrous, garde-fous, carte de confidentialité,
+      date de dernière sauvegarde, effacement total, stockage persistant web, restauration depuis l'accueil, `PRIVACY.md`
+- [x] **2.2.0** (`versionCode` 5) : sauvegardes automatiques facultatives + historique + proposition au premier projet (voir section dédiée)
 - [ ] **Non testé sur téléphone** (SQLite natif jamais exécuté ici) → Expo Go. Idem pour le **clavier Android** de la v2 :
       la logique est testée dans Chromium (fenêtre réduite pour simuler le clavier) mais pas avec un vrai clavier Android
 - [x] Rappels : notifications locales via `expo-notifications` (`src/notifications`), **code jamais exécuté sur un vrai
@@ -104,6 +149,14 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
 - [ ] À faire par l'utilisateur : activer Pages si ce n'est pas fait (Réglages → Pages → Source : GitHub Actions) ;
       télécharger l'artefact : Actions → « APK Android » → dernier run réussi → `Alam-apk` (zip contenant `Alam.apk`)
 - [ ] Test réel sur téléphone (Android via APK/Expo Go, iPhone via la PWA « Ajouter à l'écran d'accueil »)
+- [ ] 2.2.0 — **jamais exécuté sur téléphone** : table SQLite `backups` (requêtes validées avec `node:sqlite` : création idempotente, purge, liste sans
+      contenu, effacement + VACUUM sans reste), `Switch` / `AppState` / partage d'une copie sur Android. Testés ici : 91 tests unitaires, parcours web
+      complet dans Chromium (59 vérifications : proposition au 1er projet, activation, période avec horloge simulée, empilement, copie identique,
+      limite, export, restauration, suppression, effacement total, aucune requête externe / violation CSP) + l'ancien parcours (24)
+- [ ] **Jamais exécutés** (impossible depuis l'environnement cloud) : étape « Vérifier l'APK (confidentialité) » du workflow APK (`aapt2`) ;
+      `eraseAll` natif (SQL testé avec `node:sqlite`, pas avec expo-sqlite sur téléphone). Testés ici : manifeste généré par
+      `expo prebuild` (INTERNET retiré, allowBackup=false), parcours web complet dans Chromium (24 vérifications : aucune requête
+      externe, aucune violation CSP, hors ligne, export, effacement, restauration)
 - [ ] Idées : glisser-déposer pour réordonner, langue anglaise (`src/i18n/en.ts`), sauvegarde plus robuste sur iPhone
       (Safari peut vider le stockage d'un site non installé après ~7 jours sans visite)
 
@@ -121,9 +174,15 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
   `components.tsx` qui prévient la zone défilante au focus). Le calcul pur est dans `src/ui/reveal.ts`.
 - Feuilles (`Sheet` dans `components.tsx`) : **plus de `Modal` natif**. Elles sont affichées par `<SheetProvider>`
   (`src/ui/SheetHost.tsx`, dans `app/_layout.tsx`) dans la fenêtre principale, par-dessus la navigation.
+- Sauvegardes automatiques : `src/domain/autobackup.ts` (réglages, `isBackupDue`, `snapshotHash`), `src/store/snapshots.ts` (`takeSnapshot`,
+  `prepareRestore`), `src/storage/types.ts` (`BackupBackend`), `persistence(.web).ts`, `src/ui/BackupsView.tsx`, `BackupPrompt.tsx`.
+- Confidentialité : `src/privacy.test.ts` (garde-fous), `src/domain/backup.ts` (`backupStatus`), `src/storage/durability(.web).ts`,
+  `src/ui/PrivacyCard.tsx`, `PRIVACY.md`.
 - Écrans : `app/index.tsx` (projet), `calendar`, `stats`, `settings`, `node/[id]`. Barre du bas maison
   (`BottomBar`), pas expo-router Tabs (en cours de dépréciation dans Expo 57).
 - Web : la pile de navigation garde les écrans précédents dans le DOM → dans les tests Playwright, utiliser `.last()`.
+- Tests Playwright : depuis la 2.2.0, la création du tout premier projet ouvre la fenêtre « Protéger vos projets ? » (≈ 350 ms après) → la fermer
+  (`Fermer`, `.last()`) avant de continuer. Le serveur de test (`python3 -m http.server`) n'a pas de repli SPA : naviguer dans l'app, pas par URL.
 
 ## Notes techniques
 - `npx expo install` échoue dans l'environnement cloud (proxy) : utiliser `npm install pkg@version` avec les
@@ -155,7 +214,7 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
 
 ## Sécurité (audit du 2026-09-29)
 - Vérifié : aucun secret ni clé dans le dépôt ; SQL 100 % paramétré ; pas d'`eval`/`innerHTML`/WebView/lien externe ;
-  seule permission Android = notifications ; le service worker ne touche que les GET de même origine ;
+  permissions Android : notifications (+ vibration, redémarrage) seulement — **corrigé en 2.1.0** : jusqu'à la 2.0.1 l'APK déclarait aussi INTERNET, SYSTEM_ALERT_WINDOW et le stockage externe (permissions par défaut d'Expo), désormais bloquées ; le service worker ne touche que les GET de même origine ;
   l'import JSON est validé strictement (structure, profondeur, doublons, couleur `#RRGGBB`, ≤ 20 000 éléments).
 - `npm audit --omit=dev` : 0 haute/critique, 14 modérées, toutes dans l'outillage de build Expo (`uuid`,
   `decode-uri-component`) — non livrées dans l'app ; ne pas faire `audit fix --force` (casse Expo).
@@ -170,12 +229,12 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
   workflows en lecture seule (écriture uniquement pour le job `release`),
   `persist-credentials: false`, `.github/dependabot.yml` (npm + actions), `SECURITY.md`.
   Si un jour on charge une ressource externe (police, API), il faut d'abord l'autoriser dans la CSP.
-- Données non chiffrées sur l'appareil (localStorage / SQLite) ; sauvegarde automatique Android laissée activée (choix de l'utilisateur : pratique pour changer de téléphone ; à
-  réévaluer si l'app est diffusée — mettre `android.allowBackup: false` pour garder les données hors du cloud Google).
+- Données non chiffrées sur l'appareil (localStorage / SQLite). Sauvegarde automatique Android **désactivée depuis la 2.1.0** (`allowBackup: false`,
+  décision « données uniquement locales ») : changer de téléphone = exporter puis importer un fichier de sauvegarde.
 
 ## Conventions
 - Développement sur la branche désignée par la session (v1 : `claude/create-application-dodfio`, mergée dans `main` ;
-  v2 : `claude/serene-mendel-6n23bn`). Pas de PR sans demande explicite de l'utilisateur.
+  v2 : `claude/serene-mendel-6n23bn` ; 2.1.0 et 2.2.0 : `ccr-6cb66c58-01zp72`). Pas de PR sans demande explicite de l'utilisateur.
 - Ne jamais commiter `node_modules/` ni `dist/`.
 - Livrer un nouvel APK : incrémenter `version` (`app.json` + `package.json`/lock via `npm version X.Y.Z --no-git-tag-version`)
   ET `android.versionCode` (sinon Android peut refuser de remplacer l'ancien), fusionner dans `main`, puis lancer

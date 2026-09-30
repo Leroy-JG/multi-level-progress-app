@@ -1,29 +1,46 @@
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { Pressable, View } from 'react-native';
+import { backupStatus } from '../domain/backup';
 import { ImportError, exportData, parseImport } from '../domain/exchange';
 import type { ThemeMode } from '../domain/settings';
-import { LANGUAGES, t } from '../i18n';
+import { LANGUAGES, formatDateTime, t, tn } from '../i18n';
 import { useStore } from '../store/store';
 import { Button, Card, ConfirmSheet, Field, Segmented, Sheet, Text } from './components';
 import { canPickFile, pickTextFile, shareText } from './files';
+import { periodLabel } from './BackupsView';
 import { KeyboardScrollView } from './keyboard';
+import { PrivacyCard } from './PrivacyCard';
 import { useTheme } from './theme';
 
 
 export function SettingsView() {
   const theme = useTheme();
+  const router = useRouter();
   const store = useStore();
   const [importOpen, setImportOpen] = useState(false);
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<ReturnType<typeof parseImport> | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [eraseOpen, setEraseOpen] = useState(false);
+  const [eraseMessage, setEraseMessage] = useState<string | null>(null);
+
+  const now = Date.now();
+  const backup = backupStatus(store.settings.lastBackupAt, now);
+  // Rien à perdre tant qu'il n'y a pas de données : on n'alarme que si une sauvegarde manque vraiment.
+  const backupWarn = store.nodes.length > 0 && backup.kind !== 'ok';
 
   const doExport = async () => {
-    const stamp = new Date().toISOString().slice(0, 10);
+    const at = Date.now(); // l'écran peut être resté ouvert longtemps : pas l'heure du dernier affichage
+    const stamp = new Date(at).toISOString().slice(0, 10);
     try {
-      await shareText(`alam-sauvegarde-${stamp}.json`, exportData(store.nodes, Date.now()));
-      setMessage(t('settings.exported'));
+      const shared = await shareText(`alam-sauvegarde-${stamp}.json`, exportData(store.nodes, at));
+      if (shared) {
+        store.markBackedUp(at);
+        setMessage(t('settings.exported'));
+      }
     } catch {
       setMessage(t('settings.exportFailed'));
     }
@@ -63,8 +80,16 @@ export function SettingsView() {
       </Card>
 
       <Text style={{ fontSize: 17, fontWeight: '800', marginTop: 24, marginBottom: 10 }}>{t('settings.data')}</Text>
-      <Card>
-        <Text style={{ color: theme.muted, lineHeight: 20, marginBottom: 14 }}>{t('settings.dataHelp')}</Text>
+      <PrivacyCard />
+      <Card style={{ marginTop: 12 }}>
+        <Text style={{ color: theme.muted, lineHeight: 20, marginBottom: 10 }}>{t('settings.dataHelp')}</Text>
+        <Text style={{ color: backupWarn ? theme.error : theme.muted, lineHeight: 20, marginBottom: 14 }}>
+          {backup.kind === 'never'
+            ? t('backup.never')
+            : backup.kind === 'old'
+              ? t('backup.old', { date: formatDateTime(backup.at), days: backup.days })
+              : t('backup.last', { date: formatDateTime(backup.at) })}
+        </Text>
         <View style={{ gap: 10 }}>
           <Button title={t('settings.export')} onPress={doExport} />
           <Button
@@ -80,6 +105,30 @@ export function SettingsView() {
         {message ? (
           <Text style={{ color: theme.success, marginTop: 12 }} accessibilityLiveRegion="polite">
             {message}
+          </Text>
+        ) : null}
+      </Card>
+
+      <Pressable onPress={() => router.push('/backups')} accessibilityRole="button" accessibilityLabel={t('autobackup.title')} style={{ marginTop: 12 }}>
+        <Card style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontWeight: '700', fontSize: 15 }}>{t('autobackup.title')}</Text>
+            <Text style={{ color: theme.muted, fontSize: 13, marginTop: 2 }}>
+              {store.settings.autoBackup.enabled
+                ? t('autobackup.summary', { period: periodLabel(store.settings.autoBackup), count: tn('autobackup.count', store.backups.length) })
+                : t('autobackup.off')}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={theme.muted} />
+        </Card>
+      </Pressable>
+
+      <Card style={{ marginTop: 12 }}>
+        <Text style={{ color: theme.muted, lineHeight: 20, marginBottom: 14 }}>{t('settings.eraseHelp')}</Text>
+        <Button title={t('settings.erase')} variant="danger" onPress={() => setEraseOpen(true)} />
+        {eraseMessage ? (
+          <Text style={{ color: theme.success, marginTop: 12 }} accessibilityLiveRegion="polite">
+            {eraseMessage}
           </Text>
         ) : null}
       </Card>
@@ -126,6 +175,21 @@ export function SettingsView() {
           setPending(null);
           setImportOpen(false);
           setMessage(t('settings.imported'));
+        }}
+      />
+
+      <ConfirmSheet
+        visible={eraseOpen}
+        title={t('settings.eraseTitle')}
+        message={t('settings.eraseText')}
+        confirmLabel={t('settings.eraseConfirm')}
+        danger
+        onClose={() => setEraseOpen(false)}
+        onConfirm={() => {
+          store.eraseAll();
+          setEraseOpen(false);
+          setMessage(null);
+          setEraseMessage(t('settings.erased'));
         }}
       />
     </View>

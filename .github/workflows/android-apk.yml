@@ -66,11 +66,32 @@ jobs:
             echo "ANDROID_KEY_PASSWORD=$ANDROID_KEY_PASSWORD"
           } >> "$GITHUB_ENV"
           python3 scripts/sign-release.py
+      # Garantie « les données n'existent que sur l'appareil » : pas de permission Internet, pas de sauvegarde Google.
+      - name: Vérifier le manifeste généré (confidentialité)
+        run: |
+          set -eu
+          M=android/app/src/main/AndroidManifest.xml
+          grep -q 'android:allowBackup="false"' "$M" || { echo "::error::allowBackup n'est pas désactivé."; exit 1; }
+          grep -q 'android.permission.INTERNET" tools:node="remove"' "$M" || { echo "::error::La permission INTERNET n'est pas retirée."; exit 1; }
       - name: Compiler l'APK
         working-directory: android
         run: ./gradlew assembleRelease --no-daemon
       - name: Renommer l'APK
         run: cp android/app/build/outputs/apk/release/app-release.apk Alam.apk
+      # Contrôle sur l'APK final (après fusion avec les manifestes de toutes les bibliothèques).
+      - name: Vérifier l'APK (confidentialité)
+        run: |
+          set -eu
+          AAPT2=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -1)
+          "$AAPT2" dump permissions Alam.apk
+          if "$AAPT2" dump permissions Alam.apk | grep -q 'android.permission.INTERNET'; then
+            echo "::error::L'APK déclare la permission INTERNET : il pourrait envoyer des données sur Internet."
+            exit 1
+          fi
+          if ! "$AAPT2" dump xmltree --file AndroidManifest.xml Alam.apk | grep allowBackup | grep -Eq '=(false|\(type 0x12\)0x0)'; then
+            echo "::error::La sauvegarde automatique Android (allowBackup) n'est pas désactivée dans l'APK."
+            exit 1
+          fi
       - name: Empreinte de la signature
         run: |
           APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | tail -1)
