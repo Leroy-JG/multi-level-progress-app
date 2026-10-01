@@ -9,7 +9,7 @@ import { formatBytes, formatDate, formatDateTime, t, tn, type TKey } from '../i1
 import type { BackupMeta } from '../storage/types';
 import { useStore } from '../store/store';
 import { BottomBar, Button, Card, ConfirmSheet, IconButton, Segmented, Sheet, Text, TextInput } from './components';
-import { shareText } from './files';
+import { useExportFile } from './useExportFile';
 import { KeyboardScrollView, useKeyboardInset } from './keyboard';
 import { useTheme } from './theme';
 
@@ -31,6 +31,7 @@ export function BackupsView() {
   const insets = useSafeAreaInsets();
   const keyboard = useKeyboardInset();
   const store = useStore();
+  const exportFile = useExportFile();
   const config = store.settings.autoBackup;
 
   const [everyText, setEveryText] = useState(String(config.every));
@@ -65,7 +66,7 @@ export function BackupsView() {
     try {
       const payload = await store.readBackup(b.id);
       if (payload === null) return setMessage({ text: t('autobackup.restoreFailed'), error: true });
-      const shared = await shareText(`alam-sauvegarde-${new Date(b.createdAt).toISOString().slice(0, 10)}.json`, payload);
+      const shared = await exportFile(`alam-sauvegarde-${new Date(b.createdAt).toISOString().slice(0, 10)}.json`, payload);
       if (shared) setMessage({ text: t('autobackup.exported') });
     } catch {
       setMessage({ text: t('settings.exportFailed'), error: true });

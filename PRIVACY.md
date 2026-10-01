@@ -60,8 +60,10 @@ permission absente de la liste ci-dessus** (une nouvelle dépendance ne peut don
   (iCloud, ordinateur…) dépendent des réglages de votre téléphone : Alam ne peut pas les contrôler.
 - **Pas de chiffrement.** Les données sont lisibles par quiconque a accès à votre téléphone déverrouillé ou à un fichier de
   sauvegarde. Protégez votre téléphone (verrouillage d'écran) et gardez vos sauvegardes en lieu sûr.
-- **Vos exports.** Quand vous exportez une sauvegarde, c'est vous qui choisissez sa destination (fichier, e-mail, cloud…).
-  À partir de là, elle vit là où vous l'avez envoyée.
+- **Vos exports.** L'export et l'import se font par **fichier .json**. Sur Android, vous choisissez une fois un dossier
+  (sélecteur de dossiers du téléphone, sans permission supplémentaire : Alam n'a accès qu'à ce dossier) ; les sauvegardes y sont
+  écrites et le sélecteur d'import s'ouvre dans ce même dossier. Sur le web, le navigateur enregistre le fichier (Téléchargements
+  en général). À partir de là, le fichier vit là où vous l'avez mis (déplacez-le vous-même vers un cloud, un e-mail…).
 
 ## Sauvegardes automatiques (facultatives)
 

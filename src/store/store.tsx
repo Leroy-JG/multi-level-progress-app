@@ -35,6 +35,8 @@ interface StoreValue {
   setThemeMode(mode: ThemeMode): void;
   /** Note qu'une sauvegarde vient d'être exportée (date affichée dans les réglages). */
   markBackedUp(at: number): void;
+  /** Mémorise le dossier où les sauvegardes exportées sont écrites (null = à redemander). */
+  setExportFolder(folder: string | null): void;
   /** Remplace toutes les données (import). */
   replaceAll(nodes: ProgressNode[]): void;
   /** Efface définitivement projets, réglages et copies de l'appareil (aucune copie n'existe ailleurs). */
@@ -283,6 +285,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
       setThemeMode: (mode) => updateSettings((s) => ({ ...s, themeMode: mode })),
       markBackedUp: (at) => updateSettings((s) => ({ ...s, lastBackupAt: at })),
+      setExportFolder: (folder) => updateSettings((s) => ({ ...s, exportFolder: folder })),
 
       replaceAll: replaceAllNodes,
 

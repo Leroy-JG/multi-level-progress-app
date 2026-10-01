@@ -130,14 +130,19 @@ export const fr = {
   'settings.language': 'Langue',
   'settings.data': 'Vos données',
   'settings.dataHelp':
-    "Sans compte ni serveur, une sauvegarde est la seule copie de vos données hors de cet appareil. Exportez-en une régulièrement et gardez le fichier où vous voulez (il n’est pas chiffré).",
+    "Sans compte ni serveur, une sauvegarde est la seule copie de vos données hors de cet appareil. Exportez-en une régulièrement : c’est un fichier que vous gardez où vous voulez (il n’est pas chiffré).",
   'settings.export': 'Exporter une sauvegarde',
   'settings.exported': 'Sauvegarde exportée.',
   'settings.exportFailed': "L’export a échoué.",
   'settings.import': 'Importer une sauvegarde',
-  'settings.pickFile': 'Choisir un fichier…',
-  'settings.pasteLabel': 'Ou collez le contenu de la sauvegarde',
-  'settings.importCheck': 'Vérifier',
+  'settings.importFailed': 'Le fichier n’a pas pu être lu.',
+  'settings.exportFolder': 'Dossier des sauvegardes',
+  'settings.exportFolderNone': 'Pas encore choisi : Alam vous le demandera à la première sauvegarde.',
+  'settings.exportFolderChange': 'Changer de dossier',
+  'settings.fileHelpApp':
+    'Les sauvegardes sont des fichiers .json écrits dans ce dossier. Pour importer, le sélecteur de fichiers s’ouvre dans ce même dossier.',
+  'settings.fileHelpWeb':
+    'La sauvegarde est un fichier .json enregistré par votre navigateur (dossier Téléchargements en général). Pour importer, choisissez ce fichier.',
   'settings.importConfirmTitle': 'Remplacer vos données ?',
   'settings.importConfirmText':
     'Cette sauvegarde contient {projects} projet(s) et {elements} élément(s). Elle remplacera toutes les données actuelles.',

@@ -7,10 +7,11 @@ import { ImportError, exportData, parseImport } from '../domain/exchange';
 import type { ThemeMode } from '../domain/settings';
 import { LANGUAGES, formatDateTime, t, tn } from '../i18n';
 import { useStore } from '../store/store';
-import { Button, Card, ConfirmSheet, Field, Segmented, Sheet, Text } from './components';
-import { canPickFile, pickTextFile, shareText } from './files';
+import { Button, Card, ConfirmSheet, Segmented, Text } from './components';
+import { canChooseFolder, chooseFolder, pickBackupFile } from './files';
+import { useExportFile } from './useExportFile';
+import { folderLabel } from '../domain/folder';
 import { periodLabel } from './BackupsView';
-import { KeyboardScrollView } from './keyboard';
 import { PrivacyCard } from './PrivacyCard';
 import { useTheme } from './theme';
 
@@ -19,8 +20,7 @@ export function SettingsView() {
   const theme = useTheme();
   const router = useRouter();
   const store = useStore();
-  const [importOpen, setImportOpen] = useState(false);
-  const [text, setText] = useState('');
+  const exportFile = useExportFile();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<ReturnType<typeof parseImport> | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -36,13 +36,15 @@ export function SettingsView() {
     const at = Date.now(); // l'écran peut être resté ouvert longtemps : pas l'heure du dernier affichage
     const stamp = new Date(at).toISOString().slice(0, 10);
     try {
-      const shared = await shareText(`alam-sauvegarde-${stamp}.json`, exportData(store.nodes, at));
+      const shared = await exportFile(`alam-sauvegarde-${stamp}.json`, exportData(store.nodes, at));
       if (shared) {
         store.markBackedUp(at);
+        setError(null);
         setMessage(t('settings.exported'));
       }
     } catch {
-      setMessage(t('settings.exportFailed'));
+      setMessage(null);
+      setError(t('settings.exportFailed'));
     }
   };
 
@@ -55,9 +57,21 @@ export function SettingsView() {
     }
   };
 
-  const pickFile = async () => {
-    const content = await pickTextFile();
-    if (content !== null) tryParse(content);
+  const doImport = async () => {
+    try {
+      const content = await pickBackupFile(store.settings.exportFolder);
+      if (content === null) return;
+      setMessage(null);
+      tryParse(content);
+    } catch {
+      setMessage(null);
+      setError(t('settings.importFailed'));
+    }
+  };
+
+  const changeFolder = async () => {
+    const folder = await chooseFolder(store.settings.exportFolder);
+    if (folder) store.setExportFolder(folder);
   };
 
   return (
@@ -90,21 +104,30 @@ export function SettingsView() {
               ? t('backup.old', { date: formatDateTime(backup.at), days: backup.days })
               : t('backup.last', { date: formatDateTime(backup.at) })}
         </Text>
+        {canChooseFolder ? (
+          <View style={{ marginBottom: 14 }}>
+            <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600' }}>{t('settings.exportFolder')}</Text>
+            <Text style={{ marginTop: 2, marginBottom: 6 }}>
+              {store.settings.exportFolder ? folderLabel(store.settings.exportFolder) : t('settings.exportFolderNone')}
+            </Text>
+            <Button title={t('settings.exportFolderChange')} variant="ghost" onPress={changeFolder} />
+          </View>
+        ) : null}
         <View style={{ gap: 10 }}>
           <Button title={t('settings.export')} onPress={doExport} />
-          <Button
-            title={t('settings.import')}
-            variant="ghost"
-            onPress={() => {
-              setText('');
-              setError(null);
-              setImportOpen(true);
-            }}
-          />
+          <Button title={t('settings.import')} variant="ghost" onPress={doImport} />
         </View>
+        <Text style={{ color: theme.muted, fontSize: 12, lineHeight: 18, marginTop: 10 }}>
+          {canChooseFolder ? t('settings.fileHelpApp') : t('settings.fileHelpWeb')}
+        </Text>
         {message ? (
           <Text style={{ color: theme.success, marginTop: 12 }} accessibilityLiveRegion="polite">
             {message}
+          </Text>
+        ) : null}
+        {error ? (
+          <Text style={{ color: theme.error, marginTop: 12 }} accessibilityLiveRegion="polite">
+            {error}
           </Text>
         ) : null}
       </Card>
@@ -135,31 +158,6 @@ export function SettingsView() {
 
       <Text style={{ color: theme.muted, fontSize: 12, textAlign: 'center', marginTop: 28 }}>{t('settings.about')}</Text>
 
-      <Sheet visible={importOpen && !pending} title={t('settings.import')} onClose={() => setImportOpen(false)}>
-        <KeyboardScrollView style={{ flexGrow: 0 }}>
-          {canPickFile ? <Button title={t('settings.pickFile')} variant="ghost" onPress={pickFile} style={{ marginBottom: 14 }} /> : null}
-          <Field
-            label={t('settings.pasteLabel')}
-            value={text}
-            onChangeText={(v) => {
-              setText(v);
-              setError(null);
-            }}
-            multiline
-            style={{ minHeight: 120, textAlignVertical: 'top' }}
-            placeholder="{ ... }"
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          {error ? (
-            <Text style={{ color: theme.error, marginBottom: 10 }} accessibilityLiveRegion="polite">
-              {error}
-            </Text>
-          ) : null}
-          <Button title={t('settings.importCheck')} disabled={text.trim() === ''} onPress={() => tryParse(text)} />
-        </KeyboardScrollView>
-      </Sheet>
-
       <ConfirmSheet
         visible={!!pending}
         title={t('settings.importConfirmTitle')}
@@ -173,7 +171,6 @@ export function SettingsView() {
         onConfirm={() => {
           if (pending) store.replaceAll(pending);
           setPending(null);
-          setImportOpen(false);
           setMessage(t('settings.imported'));
         }}
       />

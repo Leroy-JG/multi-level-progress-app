@@ -10,6 +10,8 @@ export interface Settings {
   autoBackup: AutoBackupSettings;
   /** La proposition d'activer les copies automatiques (à la création du tout premier projet) a déjà été affichée. */
   backupPromptSeen: boolean;
+  /** Dossier (adresse fournie par le système) où les sauvegardes exportées sont écrites ; null tant qu'il n'est pas choisi. */
+  exportFolder: string | null;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -17,6 +19,7 @@ export const DEFAULT_SETTINGS: Settings = {
   lastBackupAt: null,
   autoBackup: DEFAULT_AUTO_BACKUP,
   backupPromptSeen: false,
+  exportFolder: null,
 };
 
 export function normalizeSettings(raw: unknown): Settings {
@@ -28,5 +31,6 @@ export function normalizeSettings(raw: unknown): Settings {
     lastBackupAt: typeof backup === 'number' && Number.isFinite(backup) ? backup : null,
     autoBackup: normalizeAutoBackup(obj.autoBackup),
     backupPromptSeen: obj.backupPromptSeen === true,
+    exportFolder: typeof obj.exportFolder === 'string' && obj.exportFolder !== '' ? obj.exportFolder : null,
   };
 }
