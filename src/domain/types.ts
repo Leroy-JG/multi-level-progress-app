@@ -2,6 +2,7 @@
 export const MAX_DEPTH = 4;
 
 export const LEVEL_KEYS = ['level.project', 'level.subproject', 'level.task', 'level.subtask'] as const;
+export type LevelKey = (typeof LEVEL_KEYS)[number];
 
 export type NodeId = string;
 

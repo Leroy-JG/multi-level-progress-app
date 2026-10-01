@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { dayKey } from '../domain/insights';
 import { isDone, progressMap } from '../domain/progress';
 import { canAddChild, depthOf, groupByParent, indexNodes, pathTo } from '../domain/tree';
-import { LEVEL_KEYS, type NodeId, type ProgressNode } from '../domain/types';
+import { LEVEL_KEYS, type LevelKey, type NodeId, type ProgressNode } from '../domain/types';
 import { formatDate, formatDateTime, t } from '../i18n';
 import { useStore } from '../store/store';
 import { BottomBar, Button, Card, Checkbox, Chip, ConfirmSheet, IconButton, ProgressBar, Text, TextInput } from './components';
@@ -21,7 +21,8 @@ const NO_KIDS: ProgressNode[] = [];
 
 type Dialog = 'none' | 'weights' | 'addChild' | 'editSelf' | 'due' | 'reminder' | { confirmToggle: NodeId };
 
-const levelLabel = (depth: number) => t(LEVEL_KEYS[depth - 1] ?? 'level.project');
+const levelKeyOf = (depth: number): LevelKey => LEVEL_KEYS[depth - 1] ?? 'level.project';
+const levelLabel = (depth: number) => t(levelKeyOf(depth));
 
 /** Écran générique d'un élément (projet, sous-projet, tâche ou sous-tâche). */
 export function NodeScreen({ nodeId }: { nodeId: NodeId | null }) {
@@ -215,12 +216,12 @@ export function NodeScreen({ nodeId }: { nodeId: NodeId | null }) {
 
         {isLeaf && canAddChild(index, node.id) ? (
           <Text style={{ color: theme.muted, marginBottom: 12, lineHeight: 20 }}>
-            {isProject ? t('list.emptyProject') : t('list.empty', { name: childLevel.toLowerCase() })}
+            {isProject ? t('list.emptyProject') : t(`${levelKeyOf(depth + 1)}.empty`)}
           </Text>
         ) : null}
 
         {canAddChild(index, node.id) ? (
-          <Button title={t('list.add', { name: childLevel.toLowerCase() })} onPress={() => setDialog('addChild')} />
+          <Button title={t(`${levelKeyOf(depth + 1)}.add`)} onPress={() => setDialog('addChild')} />
         ) : null}
 
         {/* Détails : échéance, rappel, note */}
@@ -282,7 +283,7 @@ export function NodeScreen({ nodeId }: { nodeId: NodeId | null }) {
       <EditSheet
         visible={dialog === 'addChild'}
         mode="create"
-        levelLabel={childLevel}
+        levelKey={levelKeyOf(depth + 1)}
         isProject={false}
         onClose={close}
         onSubmit={(title) => {
@@ -293,7 +294,7 @@ export function NodeScreen({ nodeId }: { nodeId: NodeId | null }) {
       <EditSheet
         visible={dialog === 'editSelf'}
         mode="edit"
-        levelLabel={levelLabel(depth)}
+        levelKey={levelKeyOf(depth)}
         isProject={isProject}
         initialTitle={node.title}
         initialColor={node.color ?? undefined}

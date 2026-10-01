@@ -65,7 +65,7 @@ export function ProjectSwitcher() {
       <EditSheet
         visible={dialog === 'create'}
         mode="create"
-        levelLabel={t('level.project')}
+        levelKey="level.project"
         isProject
         onClose={close}
         onSubmit={(title, c) => {
@@ -76,7 +76,7 @@ export function ProjectSwitcher() {
       <EditSheet
         visible={typeof dialog === 'object' && !!editing}
         mode="edit"
-        levelLabel={t('level.project')}
+        levelKey="level.project"
         isProject
         initialTitle={editing?.title}
         initialColor={editing?.color ?? undefined}
@@ -112,7 +112,7 @@ export function NoProjectView() {
       <EditSheet
         visible={open}
         mode="create"
-        levelLabel={t('level.project')}
+        levelKey="level.project"
         isProject
         onClose={() => setOpen(false)}
         onSubmit={(title, color) => {

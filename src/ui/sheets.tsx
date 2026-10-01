@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { dayKey } from '../domain/insights';
 import { effectivePercent, summarizeWeights } from '../domain/progress';
-import type { NodeId, ProgressNode } from '../domain/types';
+import type { LevelKey, NodeId, ProgressNode } from '../domain/types';
 import { formatDate, t } from '../i18n';
 import { remindersSupported } from '../notifications';
 import type { WeightUpdate } from '../store/store';
@@ -43,7 +43,7 @@ export function ColorPicker({ value, onChange }: { value: string; onChange: (c: 
 export function EditSheet({
   visible,
   mode,
-  levelLabel,
+  levelKey,
   isProject,
   initialTitle = '',
   initialColor,
@@ -53,7 +53,7 @@ export function EditSheet({
 }: {
   visible: boolean;
   mode: 'create' | 'edit';
-  levelLabel: string;
+  levelKey: LevelKey;
   isProject: boolean;
   initialTitle?: string;
   initialColor?: string;
@@ -76,12 +76,11 @@ export function EditSheet({
 
   const valid = title.trim().length > 0;
   const submit = () => valid && onSubmit(title, color);
-  const name = levelLabel.toLowerCase();
 
   return (
     <Sheet
       visible={visible}
-      title={mode === 'create' ? t('edit.create', { name }) : t('edit.modify', { name })}
+      title={mode === 'create' ? t(`${levelKey}.create`) : t(`${levelKey}.modify`)}
       onClose={onClose}
     >
       <KeyboardScrollView style={{ flexGrow: 0 }}>
@@ -90,7 +89,7 @@ export function EditSheet({
           value={title}
           onChangeText={setTitle}
           autoFocus
-          placeholder={t('field.namePlaceholder', { name })}
+          placeholder={t(`${levelKey}.placeholder`)}
           returnKeyType="done"
           onSubmitEditing={submit}
           maxLength={80}

@@ -139,6 +139,7 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
       dans le workflow APK ; aucun changement fonctionnel (les rappels ne doivent pas changer : **non testé sur téléphone**). Build CI de la branche validé
       (run 36722846701 : `aapt2` = exactement 6 permissions, sans `INTERNET`, liste blanche passée, même signature de debug que la 2.2.0) ; l'APK à télécharger est
       l'artefact `Alam-apk` du dernier run réussi de « APK Android » sur `main`.
+- [x] Relecture du français (2026-10-01) : accords « Nouvelle tâche / Ajouter une sous-tâche / Aucune tâche » (clés `level.<niveau>.create|modify|placeholder|add|empty` dans `fr.ts`, un texte par niveau pour gérer le genre ; ne plus composer `{name}` en minuscules), apostrophes typographiques, libellés des statistiques
 - [ ] **Non testé sur téléphone** (SQLite natif jamais exécuté ici) → Expo Go. Idem pour le **clavier Android** de la v2 :
       la logique est testée dans Chromium (fenêtre réduite pour simuler le clavier) mais pas avec un vrai clavier Android
 - [x] Rappels : notifications locales via `expo-notifications` (`src/notifications`), **code jamais exécuté sur un vrai
