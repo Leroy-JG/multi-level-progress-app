@@ -65,6 +65,7 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
   `DELETE` + `VACUUM` + `wal_checkpoint(TRUNCATE)`, car un simple `DELETE` laisse les textes dans le fichier — vérifié) ;
   stockage persistant web (`src/storage/durability.web.ts`, `navigator.storage.persist()` **sur geste de l'utilisateur
   seulement** : Firefox affiche une demande) ; bouton « Restaurer une sauvegarde » sur l'écran d'accueil vide (nouvel appareil).
+- **Export/import sur Android = TEXTE, pas fichier** (constaté par l'utilisateur, 2026-10-01) : `src/ui/files.ts` utilise `Share.share({ message })` (la feuille de partage reçoit du texte ; l'utilisateur le copie-colle), l'import se fait en collant (`pickTextFile` renvoie `null`). Seul le web (`files.web.ts`) télécharge / choisit un vrai fichier. Piste non faite : vrai fichier `.json` sur Android (`expo-file-system` + `expo-sharing`) ; l'utilisateur juge le copier-coller acceptable. Les textes de l'interface et les docs disent donc « sauvegarde » et non « fichier ».
 - Exporter n'est comptabilisé comme sauvegarde que si l'utilisateur a réellement partagé (`shareText` renvoie `false` si la feuille de partage est fermée).
 - Non fait (idées) : export chiffré par mot de passe, verrouillage de l'app, alerte visible si l'écriture locale échoue (quota / navigation privée).
 
@@ -82,7 +83,7 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
   `Persistence` étend `BackupBackend` (`listBackups/readBackup/addBackup/deleteBackup`). « Effacer toutes mes données » supprime aussi les copies.
 - **Restaurer** : `prepareRestore` (lit, valide avec `parseImport`, garde d'abord l'état actuel en `before-restore`) puis `replaceAll`.
 - **Limite assumée et affichée** : les copies vivent dans le même espace que les données → elles protègent d'une erreur, **pas** de la perte
-  du téléphone / désinstallation / stockage vidé (il faut exporter un fichier). Piste non faite : dossier choisi par l'utilisateur
+  du téléphone / désinstallation / stockage vidé (il faut exporter une sauvegarde). Piste non faite : dossier choisi par l'utilisateur
   (Android SAF, `expo-file-system`) pour survivre à la désinstallation.
 - **Fenêtre de proposition** (`src/ui/BackupPrompt.tsx`, montée dans `app/_layout.tsx`) : à la création du **tout premier projet**
   (aucune racine existante) si `!backupPromptSeen` et copies non activées ; bouton « Configurer les sauvegardes » → `/backups`, ou « Fermer ».
@@ -252,7 +253,7 @@ Inspiration d'interface : « Study Tracker & Timer: Track It » (Android) mais *
   `persist-credentials: false`, `.github/dependabot.yml` (npm + actions), `SECURITY.md`.
   Si un jour on charge une ressource externe (police, API), il faut d'abord l'autoriser dans la CSP.
 - Données non chiffrées sur l'appareil (localStorage / SQLite). Sauvegarde automatique Android **désactivée depuis la 2.1.0** (`allowBackup: false`,
-  décision « données uniquement locales ») : changer de téléphone = exporter puis importer un fichier de sauvegarde.
+  décision « données uniquement locales ») : changer de téléphone = exporter puis importer une sauvegarde.
 
 ## Conventions
 - Développement sur la branche désignée par la session (v1 : `claude/create-application-dodfio`, mergée dans `main` ;

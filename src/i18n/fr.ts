@@ -115,7 +115,7 @@ export const fr = {
   'settings.language': 'Langue',
   'settings.data': 'Vos données',
   'settings.dataHelp':
-    "Sans compte ni serveur, une sauvegarde est la seule copie de vos données hors de cet appareil. Exportez-en une régulièrement et gardez le fichier où vous voulez (il n'est pas chiffré).",
+    "Sans compte ni serveur, une sauvegarde est la seule copie de vos données hors de cet appareil. Exportez-en une régulièrement et gardez-la où vous voulez : sur Android c'est un texte (code) à copier dans une note ou un e-mail, sur le web un fichier (non chiffré dans les deux cas).",
   'settings.export': 'Exporter une sauvegarde',
   'settings.exported': 'Sauvegarde exportée.',
   'settings.exportFailed': "L'export a échoué.",
@@ -132,19 +132,19 @@ export const fr = {
   'settings.eraseHelp': "Supprime tous vos projets, réglages et copies automatiques de cet appareil. Il n'y a aucune copie ailleurs.",
   'settings.eraseTitle': 'Tout effacer ?',
   'settings.eraseText':
-    "Tous vos projets, réglages et copies automatiques seront supprimés définitivement de cet appareil. Il n'en existe aucune copie ailleurs : sans fichier de sauvegarde exporté, vous ne pourrez pas les récupérer.",
+    "Tous vos projets, réglages et copies automatiques seront supprimés définitivement de cet appareil. Il n'en existe aucune copie ailleurs : sans sauvegarde exportée, vous ne pourrez pas les récupérer.",
   'settings.eraseConfirm': 'Tout effacer définitivement',
   'settings.erased': 'Toutes les données ont été effacées.',
   'settings.about': 'Alam · données stockées sur votre appareil',
 
   'privacy.headline': "Vos données n'existent que sur cet appareil.",
   'privacy.noNetwork':
-    "Alam n'a ni compte, ni serveur, ni statistiques d'usage : l'application n'envoie rien sur Internet. Seuls les fichiers de sauvegarde que vous exportez vous-même en sortent.",
+    "Alam n'a ni compte, ni serveur, ni statistiques d'usage : l'application n'envoie rien sur Internet. Seules les sauvegardes que vous exportez vous-même en sortent.",
   'privacy.whereApp':
     "Elles sont rangées dans l'espace privé de l'application, inaccessible aux autres applications, et disparaîtront si vous désinstallez Alam.",
   'privacy.whereWeb':
     'Elles sont rangées dans le stockage de ce navigateur et disparaîtront si vous effacez les données du site.',
-  'privacy.noCopy': "Personne n'en garde de copie : vous seul pouvez les sauvegarder, sous la forme d'un fichier que vous conservez où vous voulez.",
+  'privacy.noCopy': "Personne n'en garde de copie : vous seul pouvez les sauvegarder, sous la forme d'un texte ou d'un fichier que vous conservez où vous voulez.",
   'privacy.persistent': 'Stockage protégé : le navigateur ne le videra pas de lui-même.',
   'privacy.bestEffort':
     "Stockage non protégé : le navigateur peut le vider s'il manque de place, ou après une longue absence (iPhone). Ajoutez Alam à l'écran d'accueil et exportez des sauvegardes.",
@@ -162,7 +162,7 @@ export const fr = {
   'autobackup.intro':
     "Alam peut garder des copies régulières de vos projets, sur cet appareil et nulle part ailleurs. Elles sont faites à l'ouverture de l'application, une fois le délai écoulé. Chaque copie s'ajoute à l'historique : la précédente n'est jamais écrasée.",
   'autobackup.limit':
-    "Ces copies restent sur cet appareil : elles vous protègent d'une erreur (suppression, mauvais import), pas de la perte du téléphone ni d'une désinstallation. Pour cela, exportez un fichier depuis l'historique ou les Réglages.",
+    "Ces copies restent sur cet appareil : elles vous protègent d'une erreur (suppression, mauvais import), pas de la perte du téléphone ni d'une désinstallation. Pour cela, exportez une sauvegarde depuis l'historique ou les Réglages.",
   'autobackup.enable': 'Activer les sauvegardes automatiques',
   'autobackup.frequency': 'Fréquence',
   'autobackup.everyLabel': "Nombre de jours ou de semaines entre deux copies",
@@ -196,7 +196,7 @@ export const fr = {
   'autobackup.kind_before-restore': 'Avant restauration',
   'autobackup.open': 'Ouvrir la copie du {date}',
   'autobackup.restore': 'Restaurer cette copie',
-  'autobackup.export': 'Exporter dans un fichier',
+  'autobackup.export': 'Exporter cette copie',
   'autobackup.delete': 'Supprimer cette copie',
   'autobackup.restoreTitle': 'Restaurer cette copie ?',
   'autobackup.restoreText':
@@ -214,7 +214,7 @@ export const fr = {
     "Vos données n'existent que sur cet appareil. Alam peut en garder des copies automatiques et régulières, sur cet appareil, sans rien envoyer sur Internet. Vous choisissez la fréquence (une semaine par défaut) — ou vous ne faites rien.",
   'backupPrompt.cta': 'Configurer les sauvegardes',
 
-  'import.invalid_json': "Ce n'est pas un fichier JSON valide.",
-  'import.invalid_format': "Ce fichier n'est pas une sauvegarde de cette application.",
+  'import.invalid_json': "Ce n'est pas une sauvegarde JSON valide (le texte est-il complet ?).",
+  'import.invalid_format': "Ce contenu n'est pas une sauvegarde de cette application.",
   'import.invalid_nodes': 'La sauvegarde est incohérente (éléments en double, parents manquants ou niveaux en trop).',
 };
